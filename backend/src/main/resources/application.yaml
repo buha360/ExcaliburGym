@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: excalibur
+  datasource:
+    url: "jdbc:sqlite:${EXCALIBUR_DB_PATH:./data/excalibur-gym.db}"
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      maximum-pool-size: 1
+      connection-init-sql: "PRAGMA foreign_keys=ON"
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  sql:
+    init:
+      mode: never
+
+server:
+  port: 8080
+  servlet:
+    session:
+      timeout: 12h
+      cookie:
+        http-only: true
+        same-site: strict

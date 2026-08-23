@@ -1,0 +1,62 @@
+<section>
+  <header class="page-heading">
+    <div><p>Adminisztráció</p><h1>Bérlettípusok és árak</h1></div>
+    <span class="count-badge">{{ products().length }} bérlettípus</span>
+  </header>
+
+  @if (error()) { <p class="form-error page-message">{{ error() }}</p> }
+  @if (success()) { <p class="form-success page-message">{{ success() }}</p> }
+
+  <div class="product-layout">
+    <form class="product-form" [formGroup]="productForm" (ngSubmit)="save()">
+      <div>
+        <span class="eyebrow">{{ editingId() ? 'Szerkesztés' : 'Új árucikk' }}</span>
+        <h2>{{ editingId() ? 'Bérlettípus módosítása' : 'Bérlettípus felvétele' }}</h2>
+      </div>
+      <label class="field"><span>Megnevezés</span><input type="text" formControlName="name" placeholder="Például: 8 alkalmas bérlet"></label>
+      <div class="form-row">
+        <label class="field"><span>Érvényesség (nap)</span><input type="number" min="1" max="3650" formControlName="validityDays"></label>
+        <label class="field"><span>Alkalmak száma</span><input type="number" min="1" max="1000" formControlName="entryLimit" placeholder="Korlátlan"></label>
+      </div>
+      <label class="field"><span>Alapár (Ft)</span><input type="number" min="0" max="10000000" step="100" formControlName="defaultPrice"></label>
+      <button class="button button-primary button-large" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Mentés…' : editingId() ? 'Módosítások mentése' : 'Bérlettípus hozzáadása' }}
+      </button>
+      @if (editingId()) { <button class="button" type="button" (click)="cancelEdit()">Mégse</button> }
+      <p class="hint">Az alapár automatikusan bekerül minden új értékesítésbe. Az üres alkalomszám korlátlan bérletet jelent.</p>
+    </form>
+
+    <section class="product-panel">
+      <div class="panel-heading"><span class="eyebrow">Árlista</span><h2>Rögzített kondibérletek</h2></div>
+      @if (loading()) {
+        <p class="empty-state">Bérlettípusok betöltése…</p>
+      } @else {
+        <div class="product-list">
+          @for (product of products(); track product.id) {
+            <article class="product-card" [class.inactive]="!product.active">
+              <div class="product-main">
+                <div>
+                  <div class="name-line"><h3>{{ product.name }}</h3><span class="state" [class.active]="product.active">{{ product.active ? 'Aktív' : 'Inaktív' }}</span></div>
+                  <p>{{ product.entryLimit ? product.entryLimit + ' alkalom' : 'Korlátlan belépés' }} · {{ product.validityDays }} nap</p>
+                </div>
+                <strong>{{ money(product.defaultPrice) }}</strong>
+              </div>
+              @if (product.active) {
+                <div class="card-actions">
+                  @if (deactivateConfirmationId() === product.id) {
+                    <span>A korábbi eladások megmaradnak. Biztosan kivegyük?</span>
+                    <button class="button button-danger" type="button" (click)="deactivate(product)" [disabled]="saving()">Igen, inaktiválás</button>
+                    <button class="button" type="button" (click)="deactivateConfirmationId.set(null)">Mégse</button>
+                  } @else {
+                    <button class="button" type="button" (click)="edit(product)">Szerkesztés</button>
+                    <button class="button button-danger" type="button" (click)="requestDeactivate(product.id)">Inaktiválás</button>
+                  }
+                </div>
+              }
+            </article>
+          }
+        </div>
+      }
+    </section>
+  </div>
+</section>

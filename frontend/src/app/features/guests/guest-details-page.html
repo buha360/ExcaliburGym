@@ -1,0 +1,151 @@
+<section>
+  <a class="back-link" routerLink="/guests">‹ Vissza a vendégekhez</a>
+  @if (error()) { <p class="form-error page-message">{{ error() }}</p> }
+  @if (success()) { <p class="form-success page-message">{{ success() }}</p> }
+
+  @if (loading()) {
+    <p class="empty-state">Vendégadatok betöltése…</p>
+  } @else if (guest(); as currentGuest) {
+    <header class="guest-header">
+      <div class="guest-identity">
+        <h1>{{ currentGuest.fullName }}</h1>
+      </div>
+      <div class="header-actions">
+        <span class="status" [class.active]="currentGuest.activeGymPass">{{ currentGuest.activeGymPass ? 'Aktív' : 'Inaktív' }}</span>
+        @if (repeatConfirmation()) {
+          <span class="repeat-warning">Ma már volt beléptetve.</span>
+          <button class="button repeat-button" type="button" (click)="checkIn(true)" [disabled]="checkInBusy()">Mégis beléptetem</button>
+        } @else {
+          <button class="button check-in-button" type="button" (click)="checkIn()" [disabled]="!currentGuest.activeGymPass || checkInBusy()">
+            {{ checkInBusy() ? 'Rögzítés…' : currentGuest.checkedInToday ? 'Újabb beléptetés' : 'Ma itt járt' }}
+          </button>
+        }
+      </div>
+    </header>
+
+    <div class="overview-grid">
+      <article><span>Jelenlegi bérlet</span><strong>{{ currentGuest.currentPassName || 'Nincs aktív bérlet' }}</strong></article>
+      <article><span>Érvényesség vége</span><strong>{{ currentGuest.currentPassValidUntil ? date(currentGuest.currentPassValidUntil) : '–' }}</strong></article>
+      <article><span>Korábbi vásárlások</span><strong>{{ currentGuest.passes.length }}</strong></article>
+    </div>
+
+    <div class="details-layout">
+      <form class="pass-form" [formGroup]="passForm" (ngSubmit)="sellPass()">
+        <div><h2>Kondibérlet kiállítása</h2></div>
+        <div class="field custom-field">
+          <span>Bérlettípus</span>
+          <button class="picker-trigger" type="button" [class.open]="productMenuOpen()" [attr.aria-expanded]="productMenuOpen()" (click)="toggleProductMenu()">
+            @if (selectedProduct(); as product) {
+              <span><strong>{{ product.name }}</strong><small>{{ money(product.defaultPrice) }} · {{ product.validityDays }} nap</small></span>
+            } @else {
+              <span class="placeholder">Válassz bérletet…</span>
+            }
+            <span class="chevron" aria-hidden="true">⌄</span>
+          </button>
+          @if (productMenuOpen()) {
+            <div class="picker-menu product-menu">
+              @for (product of products(); track product.id) {
+                <button type="button" [class.selected]="selectedProduct()?.id === product.id" (click)="selectProduct(product)">
+                  <span><strong>{{ product.name }}</strong><small>{{ product.entryLimit ? product.entryLimit + ' alkalom' : 'Korlátlan' }} · {{ product.validityDays }} nap</small></span>
+                  <b>{{ money(product.defaultPrice) }}</b>
+                </button>
+              }
+            </div>
+          }
+        </div>
+        <div class="form-row">
+          <div class="field custom-field">
+            <span>Érvényesség kezdete</span>
+            <button class="picker-trigger" type="button" [class.open]="datePickerOpen()" [attr.aria-expanded]="datePickerOpen()" (click)="toggleDatePicker()">
+              <span>{{ selectedDateLabel() }}</span><span class="calendar-icon" aria-hidden="true">▦</span>
+            </button>
+            @if (datePickerOpen()) {
+              <div class="picker-menu calendar-menu">
+                <div class="calendar-heading">
+                  <button type="button" aria-label="Előző hónap" (click)="changeCalendarMonth(-1)">‹</button>
+                  <strong>{{ calendarMonthLabel() }}</strong>
+                  <button type="button" aria-label="Következő hónap" (click)="changeCalendarMonth(1)">›</button>
+                </div>
+                <div class="calendar-grid weekdays">
+                  @for (day of weekDays; track day) { <span>{{ day }}</span> }
+                </div>
+                <div class="calendar-grid">
+                  @for (day of calendarDays(); track day.date.getTime()) {
+                    <button type="button" [class.muted]="!day.inCurrentMonth" [class.selected]="isSelectedDate(day.date)" (click)="selectDate(day.date)">{{ day.date.getDate() }}</button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+          <div class="field price-field">
+            <span>Fizetendő</span>
+            <div class="price-summary">
+              <strong>{{ selectedProduct() ? money(selectedProduct()!.defaultPrice) : '–' }}</strong>
+            </div>
+          </div>
+        </div>
+        <fieldset class="payment-options">
+          <legend>Fizetési mód</legend>
+          <label><input type="radio" formControlName="paymentMethod" [value]="paymentMethods.Cash"><span>Készpénz</span></label>
+          <label><input type="radio" formControlName="paymentMethod" [value]="paymentMethods.BankCard"><span>Bankkártya</span></label>
+        </fieldset>
+        <button class="button button-primary button-large" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Kiállítás…' : 'Bérlet kiállítása' }}
+        </button>
+      </form>
+
+      <section class="history-panel">
+        <div class="panel-heading"><span class="eyebrow">Előzmények</span><h2>Megírt bérletek</h2></div>
+        <div class="pass-list">
+          @for (pass of currentGuest.passes; track pass.id) {
+            <article class="pass-card">
+              <div class="pass-title">
+                <div><h3>{{ pass.productName }}</h3><p>{{ date(pass.validFrom) }} – {{ date(pass.validUntil) }}</p></div>
+                <span class="pass-status" [class.active]="pass.status === 'ACTIVE'">{{ statusLabel(pass.status) }}</span>
+              </div>
+              <dl>
+                <div><dt>Fizetve</dt><dd>{{ money(pass.pricePaid) }} · {{ paymentLabel(pass.paymentMethod) }}</dd></div>
+                <div><dt>Kiállította</dt><dd>{{ pass.issuedByEmployeeName }}</dd></div>
+                @if (pass.totalEntries) { <div><dt>Alkalmak</dt><dd>{{ pass.remainingEntries }} / {{ pass.totalEntries }}</dd></div> }
+              </dl>
+            </article>
+          } @empty {
+            <p class="empty-state">Ennek a vendégnek még nincs bérletelőzménye.</p>
+          }
+        </div>
+        <div class="visits-heading"><span class="eyebrow">Látogatások</span><h2>Beléptetési előzmények</h2></div>
+        <div class="visit-list">
+          @for (visit of currentGuest.visits; track visit.id) {
+            <article class="visit-card" [class.reversed]="visit.reversed">
+              <span class="visit-mark" aria-hidden="true">{{ visit.reversed ? '↺' : '✓' }}</span>
+              <div class="visit-data">
+                <strong>{{ dateTime(visit.checkedInAt) }}</strong>
+                <small>{{ visit.passName }} · Beléptette: {{ visit.checkedInByEmployeeName }}</small>
+                @if (visit.reversed) {
+                  <p><b>Visszavonva:</b> {{ visit.reversalReason }} · {{ visit.reversedByEmployeeName }}</p>
+                }
+              </div>
+              @if (!visit.reversed && isToday(visit.checkedInAt) && reversalVisitId() !== visit.id) {
+                <button class="reverse-link" type="button" (click)="startReversal(visit.id)">Téves beléptetés</button>
+              }
+              @if (reversalVisitId() === visit.id) {
+                <form class="reversal-form" [formGroup]="reversalForm" (ngSubmit)="reverseVisit(visit.id)">
+                  <label class="field">
+                    <span>Visszavonás indoka</span>
+                    <textarea formControlName="reason" rows="2" maxlength="500" placeholder="Például: rossz vendéget választottam ki"></textarea>
+                  </label>
+                  <div>
+                    <button class="button button-danger" type="submit" [disabled]="reversalBusy()">{{ reversalBusy() ? 'Visszavonás…' : 'Beléptetés visszavonása' }}</button>
+                    <button class="button" type="button" (click)="cancelReversal()">Mégse</button>
+                  </div>
+                </form>
+              }
+            </article>
+          } @empty {
+            <p class="empty-state">Még nincs rögzített látogatása.</p>
+          }
+        </div>
+      </section>
+    </div>
+  }
+</section>

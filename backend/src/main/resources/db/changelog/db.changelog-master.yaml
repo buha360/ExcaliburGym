@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/changes/001-create-employee-auth-tables.yaml
+  - include:
+      file: db/changelog/changes/002-create-guest-pass-sales.yaml
+  - include:
+      file: db/changelog/changes/003-add-product-prices-and-check-ins.yaml
+  - include:
+      file: db/changelog/changes/004-create-audit-log.yaml
+  - include:
+      file: db/changelog/changes/005-load-demo-data.yaml

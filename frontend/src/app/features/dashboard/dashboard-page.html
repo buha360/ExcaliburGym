@@ -1,0 +1,47 @@
+<section class="dashboard">
+  <div class="search-heading">
+    <h1>Gyors vendégkeresés</h1>
+    <a class="button button-primary" routerLink="/guests"><span aria-hidden="true">+</span> Új vendég</a>
+  </div>
+  <label class="search-box">
+    <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
+    <input type="search" placeholder="Írd be a vendég nevét…" [formControl]="searchControl" autocomplete="off">
+  </label>
+
+  <div class="search-results" aria-live="polite">
+    @if (checkInMessage()) { <p class="form-success result-message">{{ checkInMessage() }}</p> }
+    @if (searchError()) {
+      <p class="form-error">{{ searchError() }}</p>
+    } @else if (searching()) {
+      <p class="empty-state">Keresés…</p>
+    } @else {
+      @for (guest of guests(); track guest.id) {
+        <article class="guest-result">
+          <a class="guest-link" [routerLink]="['/guests', guest.id]">
+            <div>
+              <strong>{{ guest.fullName }}</strong>
+              <small>{{ guest.currentPassName || 'Nincs érvényes kondibérlet' }}</small>
+            </div>
+            <div class="result-status">
+              <span class="status" [class.active]="guest.activeGymPass">{{ guest.activeGymPass ? 'Aktív' : 'Inaktív' }}</span>
+              @if (guest.currentPassValidUntil) { <small>Érvényes: {{ guest.currentPassValidUntil }}</small> }
+            </div>
+          </a>
+          <div class="visit-action">
+            @if (repeatConfirmationId() === guest.id) {
+              <p>Ma már volt beléptetve.</p>
+              <button class="button repeat-button" type="button" (click)="checkIn(guest, true)" [disabled]="checkInBusyId() === guest.id">Mégis beléptetem</button>
+            } @else {
+              <button class="button check-in-button" type="button" (click)="checkIn(guest)" [disabled]="!guest.activeGymPass || checkInBusyId() === guest.id">
+                {{ checkInBusyId() === guest.id ? 'Rögzítés…' : guest.checkedInToday ? 'Újabb beléptetés' : 'Ma itt járt' }}
+              </button>
+            }
+          </div>
+        </article>
+      } @empty {
+        <p class="empty-state">{{ searchControl.value.trim() ? 'Nincs ilyen nevű vendég.' : 'Még nincs rögzített vendég.' }}</p>
+      }
+    }
+  </div>
+
+</section>

@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-load-demo-data
+      author: codex
+      context: "@demo"
+      changes:
+        - sqlFile:
+            path: db/changelog/demo/demo-data.sql
+            splitStatements: true
+            stripComments: true

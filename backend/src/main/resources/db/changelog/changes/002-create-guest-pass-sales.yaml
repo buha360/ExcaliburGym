@@ -1,0 +1,290 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-guest
+      author: codex
+      changes:
+        - createTable:
+            tableName: guest
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: full_name
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: full_name_search
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: registration_type
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_by_employee_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_guest_created_by_employee
+                    references: employee_account(id)
+        - createIndex:
+            tableName: guest
+            indexName: idx_guest_full_name_search
+            columns:
+              - column:
+                  name: full_name_search
+        - createIndex:
+            tableName: guest
+            indexName: idx_guest_created_at
+            columns:
+              - column:
+                  name: created_at
+  - changeSet:
+      id: 004-create-product-definition
+      author: codex
+      changes:
+        - createTable:
+            tableName: product_definition
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: code
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uk_product_definition_code
+              - column:
+                  name: name
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: service_type
+                  type: VARCHAR(24)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: validity_days
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: entry_limit
+                  type: INTEGER
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: product_definition
+            indexName: idx_product_definition_service_active
+            columns:
+              - column:
+                  name: service_type
+              - column:
+                  name: active
+        - insert:
+            tableName: product_definition
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000001" }
+              - column: { name: code, value: "GYM_DAY" }
+              - column: { name: name, value: "Napijegy" }
+              - column: { name: service_type, value: "GYM" }
+              - column: { name: validity_days, valueNumeric: 1 }
+              - column: { name: entry_limit, valueNumeric: 1 }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: product_definition
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000002" }
+              - column: { name: code, value: "GYM_8_ENTRY" }
+              - column: { name: name, value: "8 alkalmas bérlet" }
+              - column: { name: service_type, value: "GYM" }
+              - column: { name: validity_days, valueNumeric: 60 }
+              - column: { name: entry_limit, valueNumeric: 8 }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: product_definition
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000003" }
+              - column: { name: code, value: "GYM_12_ENTRY" }
+              - column: { name: name, value: "12 alkalmas bérlet" }
+              - column: { name: service_type, value: "GYM" }
+              - column: { name: validity_days, valueNumeric: 60 }
+              - column: { name: entry_limit, valueNumeric: 12 }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: product_definition
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000004" }
+              - column: { name: code, value: "GYM_MONTHLY_UNLIMITED" }
+              - column: { name: name, value: "Korlátlan havi bérlet" }
+              - column: { name: service_type, value: "GYM" }
+              - column: { name: validity_days, valueNumeric: 30 }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: product_definition
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000005" }
+              - column: { name: code, value: "GYM_WOMEN_UNLIMITED" }
+              - column: { name: name, value: "Női korlátlan bérlet" }
+              - column: { name: service_type, value: "GYM" }
+              - column: { name: validity_days, valueNumeric: 30 }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: product_definition
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000006" }
+              - column: { name: code, value: "GYM_STUDENT_PENSIONER" }
+              - column: { name: name, value: "Diák / nyugdíjas havi bérlet" }
+              - column: { name: service_type, value: "GYM" }
+              - column: { name: validity_days, valueNumeric: 30 }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: product_definition
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000007" }
+              - column: { name: code, value: "GYM_ANNUAL" }
+              - column: { name: name, value: "Éves bérlet" }
+              - column: { name: service_type, value: "GYM" }
+              - column: { name: validity_days, valueNumeric: 365 }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: product_definition
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000008" }
+              - column: { name: code, value: "GYM_3_MONTH" }
+              - column: { name: name, value: "3 havi bérlet" }
+              - column: { name: service_type, value: "GYM" }
+              - column: { name: validity_days, valueNumeric: 90 }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: product_definition
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000009" }
+              - column: { name: code, value: "GYM_6_MONTH" }
+              - column: { name: name, value: "6 havi bérlet" }
+              - column: { name: service_type, value: "GYM" }
+              - column: { name: validity_days, valueNumeric: 180 }
+              - column: { name: active, valueBoolean: true }
+        - insert:
+            tableName: product_definition
+            columns:
+              - column: { name: id, value: "10000000-0000-0000-0000-000000000010" }
+              - column: { name: code, value: "GYM_COMBINED_MONTHLY" }
+              - column: { name: name, value: "Kombinált havi bérlet (+ 4 szauna)" }
+              - column: { name: service_type, value: "GYM" }
+              - column: { name: validity_days, valueNumeric: 30 }
+              - column: { name: active, valueBoolean: true }
+  - changeSet:
+      id: 005-create-guest-pass
+      author: codex
+      changes:
+        - createTable:
+            tableName: guest_pass
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: guest_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_guest_pass_guest
+                    references: guest(id)
+              - column:
+                  name: product_definition_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_guest_pass_product
+                    references: product_definition(id)
+              - column:
+                  name: product_name_snapshot
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: purchased_at
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_from
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_until
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_entries
+                  type: INTEGER
+              - column:
+                  name: remaining_entries
+                  type: INTEGER
+              - column:
+                  name: price_paid
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: payment_method
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: issued_by_employee_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_guest_pass_issued_by_employee
+                    references: employee_account(id)
+              - column:
+                  name: invalidated_at
+                  type: VARCHAR(40)
+              - column:
+                  name: invalidated_reason
+                  type: VARCHAR(500)
+        - createIndex:
+            tableName: guest_pass
+            indexName: idx_guest_pass_guest_purchased_at
+            columns:
+              - column:
+                  name: guest_id
+              - column:
+                  name: purchased_at
+        - createIndex:
+            tableName: guest_pass
+            indexName: idx_guest_pass_purchased_at_payment
+            columns:
+              - column:
+                  name: purchased_at
+              - column:
+                  name: payment_method

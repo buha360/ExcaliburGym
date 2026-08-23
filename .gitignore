@@ -1,0 +1,36 @@
+# Workspace and IDE files
+.pnpm-store/
+**/.idea/
+**/.vscode/
+*.iml
+
+# Build outputs and dependency caches
+**/target/
+**/node_modules/
+**/dist/
+**/.angular/
+**/coverage/
+
+# Local databases, backups, and runtime data
+backend/data/*
+!backend/data/.gitkeep
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.db.gz
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak

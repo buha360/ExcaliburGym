@@ -1,0 +1,83 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-add-default-product-price
+      author: codex
+      changes:
+        # Liquibase's generic addColumn rebuilds SQLite tables and can leave
+        # existing foreign keys pointing at its temporary table name.
+        - sql:
+            dbms: sqlite
+            sql: ALTER TABLE product_definition ADD COLUMN default_price BIGINT NOT NULL DEFAULT 0
+  - changeSet:
+      id: 007-create-guest-check-in
+      author: codex
+      changes:
+        - createTable:
+            tableName: guest_check_in
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: guest_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_check_in_guest
+                    references: guest(id)
+              - column:
+                  name: guest_pass_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_check_in_guest_pass
+                    references: guest_pass(id)
+              - column:
+                  name: checked_in_at
+                  type: VARCHAR(40)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: checked_in_by_employee_id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_check_in_employee
+                    references: employee_account(id)
+              - column:
+                  name: consumed_entry
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reversed_at
+                  type: VARCHAR(40)
+              - column:
+                  name: reversed_by_employee_id
+                  type: VARCHAR(36)
+                  constraints:
+                    foreignKeyName: fk_check_in_reversed_by_employee
+                    references: employee_account(id)
+              - column:
+                  name: reversal_reason
+                  type: VARCHAR(500)
+        - createIndex:
+            tableName: guest_check_in
+            indexName: idx_check_in_guest_checked_at
+            columns:
+              - column:
+                  name: guest_id
+              - column:
+                  name: checked_in_at
+        - createIndex:
+            tableName: guest_check_in
+            indexName: idx_check_in_checked_at_reversed
+            columns:
+              - column:
+                  name: checked_in_at
+              - column:
+                  name: reversed_at

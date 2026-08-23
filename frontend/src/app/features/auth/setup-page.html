@@ -1,0 +1,33 @@
+<main class="auth-page">
+  <section class="auth-card" aria-labelledby="setup-title">
+    <div class="auth-brand">Excalibur Gym</div>
+    <h1 id="setup-title">Tulajdonosi fiók létrehozása</h1>
+    <p class="intro">Ez csak az első indításkor jelenik meg. A tulajdonos később innen tudja kezelni a dolgozókat.</p>
+
+    <form class="form-stack" [formGroup]="form" (ngSubmit)="submit()">
+      <label class="field">
+        <span>Teljes név</span>
+        <input type="text" formControlName="displayName" autocomplete="name" placeholder="Például: Kovács Péter">
+      </label>
+      <label class="field">
+        <span>PIN-kód</span>
+        <input type="password" inputmode="numeric" formControlName="pin" autocomplete="new-password" maxlength="8" placeholder="4–8 számjegy">
+      </label>
+      <label class="field">
+        <span>PIN-kód újra</span>
+        <input type="password" inputmode="numeric" formControlName="pinAgain" autocomplete="new-password" maxlength="8">
+      </label>
+
+      @if (form.controls.pinAgain.hasError('mismatch')) {
+        <p class="form-error">A két PIN-kód nem egyezik.</p>
+      }
+      @if (auth.error()) {
+        <p class="form-error">{{ auth.error() }}</p>
+      }
+
+      <button class="button button-primary button-large" type="submit" [disabled]="auth.busy()">
+        {{ auth.busy() ? 'Létrehozás…' : 'Adminisztrátor létrehozása' }}
+      </button>
+    </form>
+  </section>
+</main>

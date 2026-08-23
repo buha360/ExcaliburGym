@@ -1,0 +1,56 @@
+<section>
+  <header class="page-heading">
+    <div><p>Adminisztráció</p><h1>Dolgozók kezelése</h1></div>
+    <span class="count-badge">{{ employees().length }} fiók</span>
+  </header>
+
+  <div class="content-grid">
+    <form class="create-card" [formGroup]="createForm" (ngSubmit)="createEmployee()">
+      <div><span class="eyebrow">Új hozzáférés</span><h2>Dolgozó hozzáadása</h2></div>
+      <label class="field"><span>Teljes név</span><input type="text" formControlName="displayName" placeholder="Dolgozó neve"></label>
+      <label class="field"><span>Kezdeti PIN-kód</span><input type="password" inputmode="numeric" maxlength="8" formControlName="pin" placeholder="4–8 számjegy"></label>
+      <button class="button button-primary" type="submit" [disabled]="saving()">{{ saving() ? 'Mentés…' : 'Dolgozó létrehozása' }}</button>
+      <p class="hint">A PIN-kód biztonságos hashként kerül az adatbázisba, később sem olvasható vissza.</p>
+    </form>
+
+    <div class="employee-panel">
+      @if (error()) { <p class="form-error">{{ error() }}</p> }
+      @if (success()) { <p class="form-success">{{ success() }}</p> }
+
+      @if (loading()) {
+        <p class="empty-state">Dolgozók betöltése…</p>
+      } @else {
+        <div class="employee-list">
+          @for (employee of employees(); track employee.id) {
+            <article class="employee-card" [class.inactive]="!employee.enabled">
+              <div class="employee-data">
+                <div class="name-row">
+                  <h3>{{ employee.displayName }}</h3>
+                  <span class="status" [class.active]="employee.enabled">{{ employee.enabled ? 'Aktív' : 'Inaktív' }}</span>
+                </div>
+                <p>{{ employee.role === 'ADMIN' ? 'Tulajdonos / adminisztrátor' : 'Dolgozó' }} · Létrehozva: {{ employee.createdAt | date:'yyyy.MM.dd. HH:mm' }}</p>
+
+                @if (resetPinFor() === employee.id) {
+                  <form class="pin-reset" [formGroup]="resetPinForm" (ngSubmit)="resetPin(employee)">
+                    <label class="field"><span>Új PIN</span><input type="password" inputmode="numeric" maxlength="8" formControlName="pin"></label>
+                    <button class="button button-primary" type="submit" [disabled]="saving()">Mentés</button>
+                    <button class="button" type="button" (click)="cancelPinReset()">Mégse</button>
+                  </form>
+                } @else {
+                  <div class="employee-actions">
+                    <button class="button" type="button" (click)="startPinReset(employee.id)">PIN módosítása</button>
+                    @if (employee.role !== 'ADMIN') {
+                      <button class="button" [class.button-danger]="employee.enabled" type="button" [disabled]="saving()" (click)="toggleStatus(employee)">{{ employee.enabled ? 'Deaktiválás' : 'Aktiválás' }}</button>
+                    }
+                  </div>
+                }
+              </div>
+            </article>
+          } @empty {
+            <p class="empty-state">Még nincs dolgozó.</p>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</section>

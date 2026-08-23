@@ -1,0 +1,34 @@
+<main class="auth-page">
+  <section class="auth-card" aria-labelledby="login-title">
+    <div class="auth-brand">Excalibur Gym</div>
+    <h1 id="login-title">Belépés</h1>
+
+    <div class="employee-options" role="list" aria-label="Dolgozók">
+      @for (employee of auth.loginOptions(); track employee.id) {
+        <button
+          class="employee-option"
+          [class.selected]="selectedEmployeeId() === employee.id"
+          type="button"
+          (click)="selectEmployee(employee.id)"
+        >
+          {{ employee.displayName }}
+          <small>{{ employee.role === 'ADMIN' ? 'Tulajdonos' : 'Dolgozó' }}</small>
+        </button>
+      } @empty {
+        <p class="empty-state">Nincs belépésre jogosult dolgozó.</p>
+      }
+    </div>
+
+    <form class="form-stack" [formGroup]="form" (ngSubmit)="submit()">
+      <label class="field pin-field">
+        <input type="password" inputmode="numeric" formControlName="pin" autocomplete="current-password" maxlength="8" aria-label="PIN-kód" placeholder="PIN-kód">
+      </label>
+      @if (auth.error()) {
+        <p class="form-error">{{ auth.error() }}</p>
+      }
+      <button class="button button-primary button-large" type="submit" [disabled]="auth.busy() || !selectedEmployeeId()">
+        {{ auth.busy() ? 'Belépés…' : 'Bejelentkezés' }}
+      </button>
+    </form>
+  </section>
+</main>

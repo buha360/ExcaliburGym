@@ -1,0 +1,17 @@
+export * from './audit.service';
+import { AuditService } from './audit.service';
+export * from './authentication.service';
+import { AuthenticationService } from './authentication.service';
+export * from './employees.service';
+import { EmployeesService } from './employees.service';
+export * from './guests.service';
+import { GuestsService } from './guests.service';
+export * from './products.service';
+import { ProductsService } from './products.service';
+export * from './setup.service';
+import { SetupService } from './setup.service';
+export * from './statistics.service';
+import { StatisticsService } from './statistics.service';
+export * from './system.service';
+import { SystemService } from './system.service';
+export const APIS = [AuditService, AuthenticationService, EmployeesService, GuestsService, ProductsService, SetupService, StatisticsService, SystemService];

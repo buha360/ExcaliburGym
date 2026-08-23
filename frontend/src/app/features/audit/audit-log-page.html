@@ -1,0 +1,35 @@
+<section class="audit-page">
+  <header class="page-heading">
+    <div><p>Tevékenységek</p><h1>{{ title() }}</h1><span>{{ description() }}</span></div>
+    <button class="button" type="button" (click)="load()" [disabled]="loading()">Frissítés</button>
+  </header>
+
+  @if (error()) { <p class="form-error page-message">{{ error() }}</p> }
+
+  <section class="audit-panel" aria-live="polite">
+    @if (loading()) {
+      <p class="empty-state">A napló betöltése…</p>
+    } @else {
+      <div class="audit-list">
+        @for (entry of entries(); track entry.id) {
+          <article class="audit-entry" [class.correction]="isCorrection(entry.action)">
+            <span class="timeline-mark" aria-hidden="true"></span>
+            <div class="entry-main">
+              <div class="entry-heading">
+                <strong>{{ entry.summary }}</strong>
+                <time [attr.datetime]="entry.occurredAt">{{ entry.occurredAt | date:'yyyy.MM.dd. HH:mm:ss' }}</time>
+              </div>
+              <div class="entry-meta">
+                <span class="action-label">{{ actionLabel(entry.action) }}</span>
+                @if (auth.isAdmin()) { <span>{{ entry.employeeName }}</span> }
+                @if (entry.details) { <span>{{ entry.details }}</span> }
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <p class="empty-state">Még nincs megjeleníthető tevékenység.</p>
+        }
+      </div>
+    }
+  </section>
+</section>

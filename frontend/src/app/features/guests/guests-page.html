@@ -1,0 +1,58 @@
+<section>
+  <header class="page-heading">
+    <div><p>Nyilvántartás</p><h1>Vendégek</h1></div>
+  </header>
+
+  <div class="guest-layout">
+    <form class="create-card" [formGroup]="createForm" (ngSubmit)="createGuest()">
+      <div><h2>Vendég felvétele</h2></div>
+      <label class="field">
+        <span>Teljes név</span>
+        <input type="text" formControlName="fullName" placeholder="Vendég neve" autocomplete="off">
+      </label>
+      <fieldset class="registration-options">
+        <legend>Felvétel módja</legend>
+        <label>
+          <input type="radio" formControlName="registrationType" [value]="registrationTypes.New">
+          <span><strong>Új vendég</strong><small>Még sosem szerepelt a nyilvántartásban</small></span>
+        </label>
+        <label>
+          <input type="radio" formControlName="registrationType" [value]="registrationTypes.Imported">
+          <span><strong>Papírról átvéve</strong><small>Korábban már járt a teremben</small></span>
+        </label>
+      </fieldset>
+      <button class="button button-primary button-large" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Mentés…' : 'Vendég felvétele' }}
+      </button>
+      <p class="hint">Az átvett vendég nem növeli az „új vendégek” statisztikát.</p>
+    </form>
+
+    <div class="guest-panel">
+      <label class="search-field">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
+        <input type="search" [formControl]="searchControl" placeholder="Keresés név alapján…" autocomplete="off">
+      </label>
+      @if (error()) { <p class="form-error">{{ error() }}</p> }
+      @if (loading()) {
+        <p class="empty-state">Vendégek betöltése…</p>
+      } @else {
+        <div class="guest-list">
+          @for (guest of guests(); track guest.id) {
+            <a class="guest-card" [routerLink]="['/guests', guest.id]">
+              <div class="guest-data">
+                <h3>{{ guest.fullName }}</h3>
+                <small>{{ guest.currentPassValidUntil ? 'Érvényes: ' + guest.currentPassValidUntil : 'Nincs aktív kondibérlet' }}</small>
+              </div>
+              <div class="guest-card-meta">
+                <span class="status" [class.active]="guest.activeGymPass">{{ guest.activeGymPass ? 'Aktív' : 'Inaktív' }}</span>
+                <span class="arrow" aria-hidden="true">→</span>
+              </div>
+            </a>
+          } @empty {
+            <p class="empty-state">{{ searchControl.value.trim() ? 'Nincs találat.' : 'Még nincs rögzített vendég.' }}</p>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</section>
