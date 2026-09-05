@@ -6,6 +6,7 @@ import java.time.OffsetDateTime;
 import com.wardanger.excalibur.generated.api.StatisticsApi;
 import com.wardanger.excalibur.generated.model.StatisticsPeriod;
 import com.wardanger.excalibur.generated.model.StatisticsSummary;
+import com.wardanger.excalibur.statistics.application.StatisticsQuery;
 import com.wardanger.excalibur.statistics.application.StatisticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class StatisticsApiController implements StatisticsApi {
 
-    private final StatisticsService statistics;
+    private final StatisticsQuery statistics;
     private final Clock clock;
 
     @Override
@@ -28,6 +29,7 @@ public class StatisticsApiController implements StatisticsApi {
                 snapshot.visits(),
                 snapshot.newGuests(),
                 snapshot.soldPasses(),
+                snapshot.saunaReservations(),
                 snapshot.totalRevenue(),
                 snapshot.cashRevenue(),
                 snapshot.bankCardRevenue(),

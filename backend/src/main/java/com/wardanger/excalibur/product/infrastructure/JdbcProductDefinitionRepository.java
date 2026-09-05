@@ -39,7 +39,7 @@ public class JdbcProductDefinitionRepository implements ProductDefinitionReposit
         return jdbcTemplate.query("""
                         SELECT * FROM product_definition
                         WHERE service_type = 'GYM' AND active = TRUE
-                        ORDER BY rowid
+                        ORDER BY code
                         """,
                 JdbcProductDefinitionRepository::mapProduct);
     }
@@ -49,7 +49,7 @@ public class JdbcProductDefinitionRepository implements ProductDefinitionReposit
         return jdbcTemplate.query("""
                         SELECT * FROM product_definition
                         WHERE service_type = 'GYM'
-                        ORDER BY active DESC, name COLLATE NOCASE
+                        ORDER BY active DESC, LOWER(name)
                         """,
                 JdbcProductDefinitionRepository::mapProduct);
     }

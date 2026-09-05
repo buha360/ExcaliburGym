@@ -1,0 +1,66 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-processed-event
+      author: codex
+      changes:
+        - createTable:
+            tableName: processed_event
+            columns:
+              - column:
+                  name: event_id
+                  type: VARCHAR(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: event_type
+                  type: VARCHAR(80)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: occurred_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: processed_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: 002-create-statistics-fact
+      author: codex
+      changes:
+        - createTable:
+            tableName: statistics_fact
+            columns:
+              - column:
+                  name: event_id
+                  type: VARCHAR(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    foreignKeyName: fk_statistics_fact_event
+                    references: processed_event(event_id)
+              - column:
+                  name: event_type
+                  type: VARCHAR(80)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: occurred_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column: { name: visits_delta, type: BIGINT, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: new_guests_delta, type: BIGINT, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: sold_passes_delta, type: BIGINT, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: cash_revenue_delta, type: BIGINT, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: bank_card_revenue_delta, type: BIGINT, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: prepaid_balance_revenue_delta, type: BIGINT, defaultValueNumeric: 0, constraints: { nullable: false } }
+        - createIndex:
+            tableName: statistics_fact
+            indexName: idx_statistics_fact_occurred_at
+            columns:
+              - column:
+                  name: occurred_at

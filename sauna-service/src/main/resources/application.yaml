@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: excalibur-sauna-service
+  datasource:
+    url: ${SAUNA_DATABASE_URL}
+    username: ${SAUNA_DATABASE_USERNAME}
+    password: ${SAUNA_DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: true
+
+excalibur:
+  internal-api-key: ${SAUNA_INTERNAL_API_KEY}
+  events:
+    dispatch-delay-ms: 500
+
+server:
+  port: 8082
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info

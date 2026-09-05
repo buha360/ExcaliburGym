@@ -15,6 +15,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import lombok.RequiredArgsConstructor;
 
+import static com.wardanger.excalibur.shared.persistence.JdbcTemporalSupport.date;
+import static com.wardanger.excalibur.shared.persistence.JdbcTemporalSupport.instant;
+import static com.wardanger.excalibur.shared.persistence.JdbcTemporalSupport.timestamp;
+
 @Repository
 @RequiredArgsConstructor
 public class JdbcGuestRepository implements GuestRepository {
@@ -32,7 +36,7 @@ public class JdbcGuestRepository implements GuestRepository {
                 guest.fullName(),
                 normalizedName,
                 guest.registrationType().name(),
-                guest.createdAt().toString(),
+                timestamp(guest.createdAt()),
                 guest.createdByEmployeeId().toString());
     }
 
@@ -56,11 +60,11 @@ public class JdbcGuestRepository implements GuestRepository {
                                       AND gp.valid_from <= ? AND gp.valid_until >= ?
                                       AND (gp.remaining_entries IS NULL OR gp.remaining_entries > 0)) AS active_expiry
                             FROM guest g
-                            ORDER BY active_expiry IS NULL, active_expiry, g.full_name_search
+                            ORDER BY active_expiry NULLS LAST, g.full_name_search
                             LIMIT 6
                             """,
                     JdbcGuestRepository::mapGuest,
-                    today.toString(), today.toString());
+                    date(today), date(today));
         }
         return jdbcTemplate.query("""
                         SELECT g.*,
@@ -72,14 +76,14 @@ public class JdbcGuestRepository implements GuestRepository {
                                   AND (gp.remaining_entries IS NULL OR gp.remaining_entries > 0)) AS active_expiry
                         FROM guest g
                         WHERE g.full_name_search LIKE ?
-                        ORDER BY active_expiry IS NULL, active_expiry,
+                        ORDER BY active_expiry NULLS LAST,
                                  CASE WHEN g.full_name_search = ? THEN 0 ELSE 1 END,
                                  g.full_name_search
                         LIMIT 6
                         """,
                 JdbcGuestRepository::mapGuest,
-                today.toString(),
-                today.toString(),
+                date(today),
+                date(today),
                 "%" + normalizedQuery + "%",
                 normalizedQuery);
     }
@@ -93,8 +97,8 @@ public class JdbcGuestRepository implements GuestRepository {
                           AND created_at < ?
                         """,
                 Long.class,
-                fromInclusive.toString(),
-                toExclusive.toString());
+                timestamp(fromInclusive),
+                timestamp(toExclusive));
         return result == null ? 0 : result;
     }
 
@@ -103,7 +107,7 @@ public class JdbcGuestRepository implements GuestRepository {
                 UUID.fromString(resultSet.getString("id")),
                 resultSet.getString("full_name"),
                 GuestRegistrationType.valueOf(resultSet.getString("registration_type")),
-                Instant.parse(resultSet.getString("created_at")),
+                instant(resultSet, "created_at"),
                 UUID.fromString(resultSet.getString("created_by_employee_id")));
     }
 }

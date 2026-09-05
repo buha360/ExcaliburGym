@@ -1,0 +1,172 @@
+openapi: 3.0.3
+info:
+  title: Excalibur Gym Solarium Internal API
+  version: 1.0.0
+paths:
+  /internal/v1/solarium/products:
+    get:
+      tags: [InternalSolarium]
+      operationId: listInternalSolariumProducts
+      parameters:
+        - $ref: '#/components/parameters/InternalApiKey'
+        - name: includeInactive
+          in: query
+          required: false
+          schema: { type: boolean, default: false }
+      responses:
+        '200':
+          description: Solarium products
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/InternalSolariumProduct' }
+  /internal/v1/solarium/products/{productId}:
+    put:
+      tags: [InternalSolarium]
+      operationId: updateInternalSolariumProduct
+      parameters:
+        - $ref: '#/components/parameters/InternalApiKey'
+        - name: productId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InternalUpdateSolariumProductRequest' }
+      responses:
+        '200':
+          description: Updated product
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InternalSolariumProduct' }
+  /internal/v1/solarium/accounts/{guestId}:
+    get:
+      tags: [InternalSolarium]
+      operationId: getInternalSolariumAccount
+      parameters:
+        - $ref: '#/components/parameters/InternalApiKey'
+        - name: guestId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Guest minute balance and history
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InternalSolariumAccount' }
+  /internal/v1/solarium/purchases:
+    post:
+      tags: [InternalSolarium]
+      operationId: createInternalSolariumPurchase
+      parameters:
+        - $ref: '#/components/parameters/InternalApiKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InternalCreateSolariumPurchaseRequest' }
+      responses:
+        '201':
+          description: Minutes credited
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InternalSolariumAccount' }
+  /internal/v1/solarium/usages:
+    post:
+      tags: [InternalSolarium]
+      operationId: createInternalSolariumUsage
+      parameters:
+        - $ref: '#/components/parameters/InternalApiKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InternalCreateSolariumUsageRequest' }
+      responses:
+        '201':
+          description: Minutes deducted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InternalSolariumAccount' }
+components:
+  parameters:
+    InternalApiKey:
+      name: X-Internal-Api-Key
+      in: header
+      required: true
+      schema: { type: string }
+  schemas:
+    InternalPaymentMethod:
+      type: string
+      enum: [CASH, BANK_CARD, PREPAID_BALANCE]
+    InternalSolariumTransactionType:
+      type: string
+      enum: [PURCHASE, USAGE]
+    InternalSolariumProduct:
+      type: object
+      required: [id, code, name, minutesPerUnit, defaultPrice, active, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        minutesPerUnit: { type: integer, minimum: 1 }
+        defaultPrice: { type: integer, format: int64, minimum: 0 }
+        active: { type: boolean }
+        updatedAt: { type: string, format: date-time }
+    InternalUpdateSolariumProductRequest:
+      type: object
+      required: [name, defaultPrice, active, employeeId, employeeName]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        defaultPrice: { type: integer, format: int64, minimum: 0, maximum: 10000000 }
+        active: { type: boolean }
+        employeeId: { type: string, format: uuid }
+        employeeName: { type: string, minLength: 2, maxLength: 160 }
+    InternalSolariumTransaction:
+      type: object
+      required: [id, type, minutesDelta, balanceAfter, occurredAt, employeeName]
+      properties:
+        id: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/InternalSolariumTransactionType' }
+        minutesDelta: { type: integer }
+        balanceAfter: { type: integer, minimum: 0 }
+        productName: { type: string, nullable: true }
+        quantity: { type: integer, nullable: true }
+        pricePaid: { type: integer, format: int64, nullable: true }
+        paymentMethod: { $ref: '#/components/schemas/InternalPaymentMethod' }
+        occurredAt: { type: string, format: date-time }
+        employeeName: { type: string }
+    InternalSolariumAccount:
+      type: object
+      required: [guestId, guestName, remainingMinutes, transactions]
+      properties:
+        guestId: { type: string, format: uuid }
+        guestName: { type: string }
+        remainingMinutes: { type: integer, minimum: 0 }
+        transactions:
+          type: array
+          items: { $ref: '#/components/schemas/InternalSolariumTransaction' }
+    InternalCreateSolariumPurchaseRequest:
+      type: object
+      required: [guestId, guestName, productId, quantity, paymentMethod, employeeId, employeeName]
+      properties:
+        guestId: { type: string, format: uuid }
+        guestName: { type: string, minLength: 2, maxLength: 160 }
+        productId: { type: string, format: uuid }
+        quantity: { type: integer, minimum: 1, maximum: 1000 }
+        paymentMethod: { $ref: '#/components/schemas/InternalPaymentMethod' }
+        employeeId: { type: string, format: uuid }
+        employeeName: { type: string, minLength: 2, maxLength: 160 }
+    InternalCreateSolariumUsageRequest:
+      type: object
+      required: [guestId, guestName, minutes, employeeId, employeeName]
+      properties:
+        guestId: { type: string, format: uuid }
+        guestName: { type: string, minLength: 2, maxLength: 160 }
+        minutes: { type: integer, minimum: 1, maximum: 1000 }
+        employeeId: { type: string, format: uuid }
+        employeeName: { type: string, minLength: 2, maxLength: 160 }

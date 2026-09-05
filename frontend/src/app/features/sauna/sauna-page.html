@@ -1,0 +1,134 @@
+<section class="sauna-page">
+  <header class="page-heading">
+    <div><p>Időpontkezelés</p><h1>Szauna</h1></div>
+    <div class="day-summary"><span>Kiválasztott nap</span><strong>{{ longDate() }}</strong></div>
+  </header>
+
+  @if (error()) { <p class="form-error page-feedback" role="alert">{{ error() }}</p> }
+  @if (success()) { <p class="form-success page-feedback" role="status">{{ success() }}</p> }
+
+  <div class="sauna-layout">
+    <form class="reservation-card" [formGroup]="reservationForm" (ngSubmit)="createReservation()">
+      <div class="card-heading">
+        <span class="eyebrow">Új időpont</span>
+        <h2>Szaunafoglalás</h2>
+        <p>A kiválasztott idősávban a teljes szauna a vendégé.</p>
+      </div>
+
+      <div class="guest-picker">
+        <label class="field">
+          <span>Vendég</span>
+          <input type="search" [formControl]="guestSearch" placeholder="Kezdj el gépelni…" autocomplete="off">
+        </label>
+        @if (selectedGuest()) {
+          <div class="selected-guest">
+            <div><strong>{{ selectedGuest()?.fullName }}</strong><small>Vendég kiválasztva</small></div>
+            <button type="button" (click)="clearGuest()" aria-label="Vendég kiválasztásának törlése">×</button>
+          </div>
+        } @else if (guestResults().length) {
+          <div class="guest-results" role="listbox" aria-label="Vendégtalálatok">
+            @for (guest of guestResults(); track guest.id) {
+              <button type="button" role="option" (click)="selectGuest(guest)">
+                <strong>{{ guest.fullName }}</strong>
+              </button>
+            }
+          </div>
+        } @else if (searchingGuests()) {
+          <p class="search-note">Keresés…</p>
+        }
+      </div>
+
+      <div class="date-time-grid">
+        <label class="field">
+          <span>Dátum</span>
+          <input type="date" formControlName="date">
+        </label>
+        <label class="field">
+          <span>Kezdés</span>
+          <input type="time" formControlName="time" step="900">
+        </label>
+      </div>
+
+      <fieldset class="party-options">
+        <legend>Létszám</legend>
+        @for (size of [1, 2, 3]; track size) {
+          <label>
+            <input type="radio" formControlName="partySize" [value]="size">
+            <span><strong>{{ size }}</strong> fő</span>
+          </label>
+        }
+      </fieldset>
+
+      <fieldset class="duration-options">
+        <legend>Időtartam</legend>
+        @for (duration of durationOptions; track duration) {
+          <label>
+            <input type="radio" formControlName="durationMinutes" [value]="duration">
+            <span><strong>{{ duration }}</strong> perc</span>
+          </label>
+        }
+      </fieldset>
+      <button class="button button-primary button-large" type="submit" [disabled]="saving() || !selectedGuest()">
+        {{ saving() ? 'Foglalás mentése…' : 'Időpont lefoglalása' }}
+      </button>
+    </form>
+
+    <section class="schedule-panel" aria-labelledby="schedule-title">
+      <div class="schedule-heading">
+        <div><span class="eyebrow">Napi naptár</span><h2 id="schedule-title">Foglalások</h2></div>
+        <label class="compact-date">
+          <span class="sr-only">Megjelenített nap</span>
+          <input type="date" [formControl]="reservationForm.controls.date">
+        </label>
+      </div>
+
+      @if (loadingSchedule()) {
+        <p class="schedule-empty">Foglalások betöltése…</p>
+      } @else {
+        <div class="reservation-list">
+          @for (reservation of reservations(); track reservation.id) {
+            <article class="reservation-row" [class.cancelled]="reservation.status === statuses.Cancelled">
+              <div class="time-block">
+                <strong>{{ time(reservation.startAt) }}</strong>
+                <span>{{ time(reservation.endAt) }}</span>
+              </div>
+              <div class="reservation-data">
+                <div class="reservation-title">
+                  <h3>{{ reservation.guestName }}</h3>
+                  <span class="status" [class.cancelled]="reservation.status === statuses.Cancelled">
+                    {{ reservation.status === statuses.Cancelled ? 'Lemondva' : 'Foglalt' }}
+                  </span>
+                </div>
+                <p>{{ reservation.partySize }} fő · rögzítette: {{ reservation.createdByEmployeeName }}</p>
+                @if (reservation.cancellationReason) {
+                  <small>Lemondás oka: {{ reservation.cancellationReason }}</small>
+                }
+                @if (reservation.status === statuses.Reserved && cancellingId() !== reservation.id) {
+                  <button class="cancel-link" type="button" (click)="beginCancellation(reservation.id)">Foglalás lemondása</button>
+                }
+                @if (cancellingId() === reservation.id) {
+                  <form class="cancel-form" [formGroup]="cancellationForm" (ngSubmit)="confirmCancellation(reservation.id)">
+                    <label class="field">
+                      <span>Lemondás indoka</span>
+                      <input type="text" formControlName="reason" placeholder="Miért szükséges a lemondás?">
+                    </label>
+                    <div>
+                      <button class="button" type="button" (click)="closeCancellation()">Mégse</button>
+                      <button class="button button-danger" type="submit" [disabled]="saving()">Lemondás</button>
+                    </div>
+                  </form>
+                }
+              </div>
+            </article>
+          } @empty {
+            <div class="schedule-empty">
+              <span aria-hidden="true">♨</span>
+              <strong>Ez a nap még teljesen szabad</strong>
+              <p>Az első foglalás a bal oldali űrlapon rögzíthető.</p>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  </div>
+</section>

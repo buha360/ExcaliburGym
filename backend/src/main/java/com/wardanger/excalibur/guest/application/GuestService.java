@@ -5,11 +5,14 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 import com.wardanger.excalibur.audit.application.AuditLogService;
+import com.wardanger.excalibur.events.EventTopics;
 import com.wardanger.excalibur.guest.domain.Guest;
 import com.wardanger.excalibur.guest.domain.GuestRegistrationType;
+import com.wardanger.excalibur.integration.outbox.IntegrationEventPublisher;
 import com.wardanger.excalibur.pass.application.GuestPassRepository;
 import com.wardanger.excalibur.pass.domain.GuestPass;
 import com.wardanger.excalibur.pass.domain.PaymentMethod;
@@ -35,6 +38,7 @@ public class GuestService {
     private final GuestPassRepository passes;
     private final GuestCheckInRepository checkIns;
     private final AuditLogService auditLog;
+    private final IntegrationEventPublisher integrationEvents;
     private final Clock clock;
 
     @Transactional
@@ -57,6 +61,14 @@ public class GuestService {
                 employee.id());
         guests.insert(guest, normalize(fullName));
         auditLog.record(employee, "GUEST_CREATED", "GUEST", guest.id(), "Új vendég: " + fullName);
+        integrationEvents.publish(
+                EventTopics.GUEST_EVENTS,
+                "GUEST_CREATED",
+                "GUEST",
+                guest.id(),
+                employee.id(),
+                guest.createdAt(),
+                Map.of("guestId", guest.id().toString(), "registrationType", registrationType.name()));
         return new GuestProfile(guest, List.of(), List.of());
     }
 
@@ -85,17 +97,18 @@ public class GuestService {
             LocalDate validFrom,
             PaymentMethod paymentMethod,
             GymUserPrincipal employee) {
+        if (paymentMethod == null || paymentMethod == PaymentMethod.PREPAID_BALANCE) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "UNSUPPORTED_PASS_PAYMENT_METHOD",
+                    "Kondibérlet csak készpénzzel vagy bankkártyával fizethető.");
+        }
         var guest = requireGuest(guestId);
         var product = products.findActiveById(productId).orElseThrow(() -> new ApiException(
                 HttpStatus.NOT_FOUND,
                 "PRODUCT_NOT_FOUND",
                 "A kiválasztott bérlettípus nem található vagy már nem aktív."));
-        if (paymentMethod == PaymentMethod.PREPAID_BALANCE) {
-            throw new ApiException(
-                    HttpStatus.CONFLICT,
-                    "PREPAID_BALANCE_NOT_AVAILABLE",
-                    "Az egyenlegből fizetés az egyenlegmodul elkészülése után használható.");
-        }
+
         var guestPass = new GuestPass(
                 UUID.randomUUID(),
                 guestId,
@@ -118,6 +131,18 @@ public class GuestService {
                 "GUEST_PASS",
                 guestPass.id(),
                 "Bérlet kiállítva: " + product.name() + " – " + guest.fullName());
+        integrationEvents.publish(
+                EventTopics.PASS_EVENTS,
+                "PASS_SOLD",
+                "GUEST_PASS",
+                guestPass.id(),
+                employee.id(),
+                guestPass.purchasedAt(),
+                Map.of(
+                        "passId", guestPass.id().toString(),
+                        "guestId", guest.id().toString(),
+                        "pricePaid", guestPass.pricePaid(),
+                        "paymentMethod", guestPass.paymentMethod().name()));
         return guestPass;
     }
 
@@ -159,6 +184,14 @@ public class GuestService {
                 null);
         checkIns.insert(checkIn);
         auditLog.record(employee, "GUEST_CHECKED_IN", "CHECK_IN", checkIn.id(), "Vendég beléptetve: " + guest.fullName());
+        integrationEvents.publish(
+                EventTopics.VISIT_EVENTS,
+                "GUEST_CHECKED_IN",
+                "CHECK_IN",
+                checkIn.id(),
+                employee.id(),
+                checkIn.checkedInAt(),
+                Map.of("checkInId", checkIn.id().toString(), "guestId", guest.id().toString()));
         return checkIn;
     }
 
@@ -212,6 +245,14 @@ public class GuestService {
                 "CHECK_IN",
                 checkIn.id(),
                 "Beléptetés visszavonva: " + guest.fullName());
+        integrationEvents.publish(
+                EventTopics.VISIT_EVENTS,
+                "CHECK_IN_REVERSED",
+                "CHECK_IN",
+                checkIn.id(),
+                employee.id(),
+                reversedAt,
+                Map.of("checkInId", checkIn.id().toString(), "guestId", guest.id().toString()));
         return new GuestCheckIn(
                 checkIn.id(),
                 checkIn.guestId(),

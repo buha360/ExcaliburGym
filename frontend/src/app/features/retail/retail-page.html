@@ -1,0 +1,97 @@
+<section class="retail-page">
+  <header class="page-heading">
+    <div><p>Pénztár</p><h1>Termékek és vendégegyenleg</h1></div>
+    @if (selectedGuest()) {
+      <div class="balance-pill"><span>{{ selectedGuest()?.fullName }}</span><strong>{{ money(balance()?.balance ?? 0) }}</strong></div>
+    }
+  </header>
+
+  @if (error()) { <p class="form-error feedback" role="alert">{{ error() }}</p> }
+  @if (success()) { <p class="form-success feedback" role="status">{{ success() }}</p> }
+
+  <section class="guest-panel">
+    <div class="panel-heading"><span class="eyebrow">Vendég</span><h2>Egyenleg kiválasztása</h2><p>Készpénzes vagy kártyás vásárláshoz opcionális, egyenleges fizetéshez kötelező.</p></div>
+    <div class="guest-picker">
+      <label class="field"><span>Vendég neve</span><input type="search" [formControl]="guestSearch" placeholder="Kezdj el gépelni…" autocomplete="off"></label>
+      @if (selectedGuest()) {
+        <div class="selected-guest"><div><strong>{{ selectedGuest()?.fullName }}</strong><small>Elérhető: {{ money(balance()?.balance ?? 0) }}</small></div><button class="button" type="button" (click)="clearGuest()">Másik vendég</button></div>
+      } @else if (guestResults().length) {
+        <div class="guest-results">
+          @for (guest of guestResults(); track guest.id) {
+            <button type="button" (click)="selectGuest(guest)"><strong>{{ guest.fullName }}</strong><span>Kiválasztás →</span></button>
+          }
+        </div>
+      }
+    </div>
+  </section>
+
+  <div class="checkout-layout">
+    <section class="catalogue">
+      <div class="panel-heading"><span class="eyebrow">Áruk</span><h2>Termékek</h2><p>Minden termék külön tételként kerül a vásárlásba.</p></div>
+      <div class="product-grid">
+        @if (loading()) { <p class="empty-state">Termékek betöltése…</p> }
+        @else {
+          @for (product of products(); track product.id) {
+            <button class="product-tile" type="button" [disabled]="product.defaultPrice <= 0" (click)="add(product)">
+              <span>{{ product.name }}</span>
+              <strong>{{ product.defaultPrice > 0 ? money(product.defaultPrice) : 'Ár beállítása szükséges' }}</strong>
+              <small>{{ product.defaultPrice > 0 ? '+ Kosárba' : 'Adminisztrációban állítható' }}</small>
+            </button>
+          } @empty { <p class="empty-state">Még nincs pénztári termék.</p> }
+        }
+      </div>
+    </section>
+
+    <aside class="cart-panel">
+      <div class="panel-heading"><span class="eyebrow">Kosár</span><h2>Aktuális vásárlás</h2></div>
+      <div class="cart-lines">
+        @for (line of cart(); track line.product.id) {
+          <article class="cart-line">
+            <div><strong>{{ line.product.name }}</strong><small>{{ money(line.product.defaultPrice) }} / db</small></div>
+            <div class="quantity"><button type="button" (click)="changeQuantity(line.product.id, -1)" aria-label="Mennyiség csökkentése">−</button><span>{{ line.quantity }}</span><button type="button" (click)="changeQuantity(line.product.id, 1)" aria-label="Mennyiség növelése">+</button></div>
+            <b>{{ money(line.product.defaultPrice * line.quantity) }}</b>
+          </article>
+        } @empty { <div class="cart-empty">Válassz terméket a bal oldali listából.</div> }
+      </div>
+      <div class="cart-total"><span>Fizetendő</span><strong>{{ money(total()) }}</strong></div>
+      <form [formGroup]="checkoutForm" (ngSubmit)="checkout()">
+        <fieldset class="payment-options"><legend>Fizetési mód</legend>
+          <label><input type="radio" formControlName="paymentMethod" [value]="paymentMethods.Cash"><span>Készpénz</span></label>
+          <label><input type="radio" formControlName="paymentMethod" [value]="paymentMethods.BankCard"><span>Bankkártya</span></label>
+          <label [class.disabled]="!selectedGuest()"><input type="radio" formControlName="paymentMethod" [value]="paymentMethods.PrepaidBalance" [disabled]="!selectedGuest()"><span>Vendégegyenleg</span></label>
+        </fieldset>
+        <button class="button button-primary button-large checkout-button" type="submit"
+          [disabled]="saving() || !cart().length || (checkoutForm.controls.paymentMethod.value === paymentMethods.PrepaidBalance && !selectedGuest())">
+          {{ saving() ? 'Mentés…' : 'Vásárlás rögzítése' }}
+        </button>
+      </form>
+    </aside>
+  </div>
+
+  @if (selectedGuest()) {
+    <div class="balance-layout">
+      <form class="deposit-card" [formGroup]="depositForm" (ngSubmit)="deposit()">
+        <div class="panel-heading"><span class="eyebrow">Feltöltés</span><h2>Vendégegyenleg feltöltése</h2></div>
+        <label class="field"><span>Összeg (Ft)</span><input type="number" min="1" max="10000000" step="100" formControlName="amount"></label>
+        <fieldset class="payment-options two"><legend>Befizetés módja</legend>
+          <label><input type="radio" formControlName="paymentMethod" [value]="depositMethods.Cash"><span>Készpénz</span></label>
+          <label><input type="radio" formControlName="paymentMethod" [value]="depositMethods.BankCard"><span>Bankkártya</span></label>
+        </fieldset>
+        <button class="button button-primary button-large" type="submit" [disabled]="saving() || depositForm.invalid">Egyenleg feltöltése</button>
+      </form>
+
+      <section class="ledger-card">
+        <div class="ledger-heading"><div><span class="eyebrow">Főkönyv</span><h2>Egyenlegelőzmények</h2></div><strong>{{ money(balance()?.balance ?? 0) }}</strong></div>
+        <div class="ledger-list">
+          @for (transaction of balance()?.transactions ?? []; track transaction.id) {
+            <article class="ledger-row" [class.purchase]="transaction.type === transactionTypes.Purchase">
+              <span class="ledger-mark">{{ transaction.amountDelta > 0 ? '+' : '−' }}</span>
+              <div><strong>{{ transactionLabel(transaction.type) }}</strong><small>{{ dateTime(transaction.occurredAt) }} · {{ transaction.employeeName }}</small></div>
+              <div class="ledger-value"><b>{{ transaction.amountDelta > 0 ? '+' : '' }}{{ money(transaction.amountDelta) }}</b><small>Egyenleg: {{ money(transaction.balanceAfter) }}</small></div>
+            </article>
+          } @empty { <div class="ledger-empty">Még nincs egyenlegmozgás ennél a vendégnél.</div> }
+        </div>
+      </section>
+    </div>
+  }
+</section>

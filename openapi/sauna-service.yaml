@@ -1,0 +1,121 @@
+openapi: 3.0.3
+info:
+  title: Excalibur Sauna Service API
+  version: 0.1.0
+  description: Internal contract for the sauna reservation bounded context.
+paths:
+  /internal/v1/sauna/reservations:
+    get:
+      tags: [InternalSauna]
+      operationId: getInternalSaunaSchedule
+      parameters:
+        - $ref: '#/components/parameters/InternalApiKey'
+        - name: date
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Daily sauna schedule
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InternalSaunaSchedule' }
+        '401': { description: Invalid internal API key }
+    post:
+      tags: [InternalSauna]
+      operationId: createInternalSaunaReservation
+      parameters:
+        - $ref: '#/components/parameters/InternalApiKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InternalCreateSaunaReservationRequest' }
+      responses:
+        '201':
+          description: Reservation created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InternalSaunaReservation' }
+        '401': { description: Invalid internal API key }
+        '409': { description: The selected interval is already reserved }
+  /internal/v1/sauna/reservations/{reservationId}/cancellation:
+    post:
+      tags: [InternalSauna]
+      operationId: cancelInternalSaunaReservation
+      parameters:
+        - $ref: '#/components/parameters/InternalApiKey'
+        - name: reservationId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InternalCancelSaunaReservationRequest' }
+      responses:
+        '200':
+          description: Reservation cancelled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InternalSaunaReservation' }
+        '401': { description: Invalid internal API key }
+        '404': { description: Reservation not found }
+        '409': { description: Reservation already cancelled }
+components:
+  parameters:
+    InternalApiKey:
+      name: X-Internal-Api-Key
+      in: header
+      required: true
+      schema: { type: string }
+  schemas:
+    InternalSaunaReservationStatus:
+      type: string
+      enum: [RESERVED, CANCELLED]
+    InternalSaunaReservation:
+      type: object
+      required: [id, guestId, guestName, startAt, endAt, partySize, status, createdAt, createdByEmployeeId, createdByEmployeeName]
+      properties:
+        id: { type: string, format: uuid }
+        guestId: { type: string, format: uuid }
+        guestName: { type: string }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        partySize: { type: integer, minimum: 1, maximum: 3 }
+        status: { $ref: '#/components/schemas/InternalSaunaReservationStatus' }
+        createdAt: { type: string, format: date-time }
+        createdByEmployeeId: { type: string, format: uuid }
+        createdByEmployeeName: { type: string }
+        cancelledAt: { type: string, format: date-time, nullable: true }
+        cancelledByEmployeeId: { type: string, format: uuid, nullable: true }
+        cancelledByEmployeeName: { type: string, nullable: true }
+        cancellationReason: { type: string, nullable: true }
+    InternalSaunaSchedule:
+      type: object
+      required: [date, reservations]
+      properties:
+        date: { type: string, format: date }
+        nextAvailableAt: { type: string, format: date-time, nullable: true }
+        reservations:
+          type: array
+          items: { $ref: '#/components/schemas/InternalSaunaReservation' }
+    InternalCreateSaunaReservationRequest:
+      type: object
+      required: [guestId, guestName, startAt, partySize, durationMinutes, employeeId, employeeName]
+      properties:
+        guestId: { type: string, format: uuid }
+        guestName: { type: string, minLength: 2, maxLength: 160 }
+        startAt: { type: string, format: date-time }
+        partySize: { type: integer, minimum: 1, maximum: 3 }
+        durationMinutes: { type: integer, minimum: 15, maximum: 60, multipleOf: 15 }
+        employeeId: { type: string, format: uuid }
+        employeeName: { type: string, minLength: 2, maxLength: 160 }
+    InternalCancelSaunaReservationRequest:
+      type: object
+      required: [reason, employeeId, employeeName]
+      properties:
+        reason: { type: string, minLength: 3, maxLength: 500 }
+        employeeId: { type: string, format: uuid }
+        employeeName: { type: string, minLength: 2, maxLength: 160 }

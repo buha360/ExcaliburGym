@@ -1,5 +1,6 @@
 package com.wardanger.excalibur.employee.application;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,7 +21,7 @@ public interface EmployeeAccountRepository {
 
     void insert(EmployeeAccount account);
 
-    void updateEnabled(UUID id, boolean enabled, String updatedAt);
+    void updateEnabled(UUID id, boolean enabled, Instant updatedAt);
 
-    void updatePinHash(UUID id, String pinHash, String updatedAt);
+    void updatePinHash(UUID id, String pinHash, Instant updatedAt);
 }

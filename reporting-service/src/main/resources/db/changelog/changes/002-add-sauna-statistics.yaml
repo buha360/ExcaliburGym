@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-add-sauna-reservation-statistic
+      author: codex
+      changes:
+        - addColumn:
+            tableName: statistics_fact
+            columns:
+              - column:
+                  name: sauna_reservations_delta
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false

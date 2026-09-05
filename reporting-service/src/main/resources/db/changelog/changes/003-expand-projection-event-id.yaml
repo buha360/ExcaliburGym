@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-expand-projection-event-id
+      author: codex
+      comment: Allow versioned idempotency keys for additive projection corrections.
+      changes:
+        - modifyDataType:
+            tableName: statistics_fact
+            columnName: event_id
+            newDataType: VARCHAR(80)
+        - modifyDataType:
+            tableName: processed_event
+            columnName: event_id
+            newDataType: VARCHAR(80)

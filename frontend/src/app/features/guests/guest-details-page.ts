@@ -8,6 +8,7 @@ import { ProductsService } from '../../api/generated/api/products.service';
 import { GuestDetails } from '../../api/generated/model/guest-details';
 import { GuestPassStatusEnum } from '../../api/generated/model/guest-pass';
 import { PaymentMethod } from '../../api/generated/model/payment-method';
+import { PassSalePaymentMethod } from '../../api/generated/model/pass-sale-payment-method';
 import { ProductDefinition } from '../../api/generated/model/product-definition';
 
 @Component({
@@ -23,7 +24,7 @@ export class GuestDetailsPage implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly guestId = this.route.snapshot.paramMap.get('guestId') ?? '';
 
-  protected readonly paymentMethods = PaymentMethod;
+  protected readonly paymentMethods = PassSalePaymentMethod;
   protected readonly guest = signal<GuestDetails | null>(null);
   protected readonly products = signal<readonly ProductDefinition[]>([]);
   protected readonly loading = signal(true);
@@ -42,7 +43,7 @@ export class GuestDetailsPage implements OnInit {
   protected readonly passForm = this.formBuilder.nonNullable.group({
     productId: ['', Validators.required],
     validFrom: [this.localToday(), Validators.required],
-    paymentMethod: [PaymentMethod.Cash, Validators.required],
+    paymentMethod: [PassSalePaymentMethod.Cash, Validators.required],
   });
   protected readonly reversalForm = this.formBuilder.nonNullable.group({
     reason: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(500)]],
@@ -72,7 +73,7 @@ export class GuestDetailsPage implements OnInit {
     try {
       const pass = await firstValueFrom(this.guestsApi.sellGuestPass(this.guestId, this.passForm.getRawValue()));
       this.success.set(`${pass.productName} sikeresen kiállítva.`);
-      this.passForm.patchValue({ productId: '', validFrom: this.localToday(), paymentMethod: PaymentMethod.Cash });
+      this.passForm.patchValue({ productId: '', validFrom: this.localToday(), paymentMethod: PassSalePaymentMethod.Cash });
       await this.loadGuest(false);
     } catch (error: unknown) {
       this.error.set(this.errorMessage(error));

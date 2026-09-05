@@ -7,13 +7,13 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { PaymentMethod } from './payment-method';
+import { PassSalePaymentMethod } from './pass-sale-payment-method';
 
 
 export interface SellPassRequest { 
     productId: string;
     validFrom: string;
-    paymentMethod: PaymentMethod;
+    paymentMethod: PassSalePaymentMethod;
 }
 
 

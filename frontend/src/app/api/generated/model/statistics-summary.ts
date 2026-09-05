@@ -17,6 +17,7 @@ export interface StatisticsSummary {
     visits: number;
     newGuests: number;
     soldPasses: number;
+    saunaReservations: number;
     totalRevenue: number;
     cashRevenue: number;
     bankCardRevenue: number;

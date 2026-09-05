@@ -102,7 +102,7 @@ public class EmployeeAccountService {
                     "A tulajdonosi adminfiók nem deaktiválható.");
         }
 
-        accounts.updateEnabled(employeeId, enabled, clock.instant().toString());
+        accounts.updateEnabled(employeeId, enabled, clock.instant());
         var updated = getRequired(employeeId);
         auditLog.record(actor, enabled ? "EMPLOYEE_ACTIVATED" : "EMPLOYEE_DEACTIVATED", "EMPLOYEE", employeeId,
                 (enabled ? "Dolgozó aktiválva: " : "Dolgozó deaktiválva: ") + updated.displayName());
@@ -112,7 +112,7 @@ public class EmployeeAccountService {
     @Transactional
     public void resetPin(UUID employeeId, String pin, GymUserPrincipal actor) {
         var account = getRequired(employeeId);
-        accounts.updatePinHash(employeeId, passwordEncoder.encode(pin), clock.instant().toString());
+        accounts.updatePinHash(employeeId, passwordEncoder.encode(pin), clock.instant());
         auditLog.record(actor, "EMPLOYEE_PIN_CHANGED", "EMPLOYEE", employeeId, "PIN-kód módosítva: " + account.displayName());
     }
 

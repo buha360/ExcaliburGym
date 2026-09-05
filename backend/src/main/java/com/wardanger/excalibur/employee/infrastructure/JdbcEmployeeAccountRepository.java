@@ -13,6 +13,9 @@ import com.wardanger.excalibur.employee.domain.EmployeeRole;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import static com.wardanger.excalibur.shared.persistence.JdbcTemporalSupport.instant;
+import static com.wardanger.excalibur.shared.persistence.JdbcTemporalSupport.timestamp;
+
 @Repository
 public class JdbcEmployeeAccountRepository implements EmployeeAccountRepository {
 
@@ -71,25 +74,25 @@ public class JdbcEmployeeAccountRepository implements EmployeeAccountRepository 
                 account.pinHash(),
                 account.role().name(),
                 account.enabled(),
-                account.createdAt().toString(),
-                account.updatedAt().toString());
+                timestamp(account.createdAt()),
+                timestamp(account.updatedAt()));
     }
 
     @Override
-    public void updateEnabled(UUID id, boolean enabled, String updatedAt) {
+    public void updateEnabled(UUID id, boolean enabled, Instant updatedAt) {
         jdbcTemplate.update(
                 "UPDATE employee_account SET enabled = ?, updated_at = ? WHERE id = ?",
                 enabled,
-                updatedAt,
+                timestamp(updatedAt),
                 id.toString());
     }
 
     @Override
-    public void updatePinHash(UUID id, String pinHash, String updatedAt) {
+    public void updatePinHash(UUID id, String pinHash, Instant updatedAt) {
         jdbcTemplate.update(
                 "UPDATE employee_account SET pin_hash = ?, updated_at = ? WHERE id = ?",
                 pinHash,
-                updatedAt,
+                timestamp(updatedAt),
                 id.toString());
     }
 
@@ -100,7 +103,7 @@ public class JdbcEmployeeAccountRepository implements EmployeeAccountRepository 
                 resultSet.getString("pin_hash"),
                 EmployeeRole.valueOf(resultSet.getString("role")),
                 resultSet.getBoolean("enabled"),
-                Instant.parse(resultSet.getString("created_at")),
-                Instant.parse(resultSet.getString("updated_at")));
+                instant(resultSet, "created_at"),
+                instant(resultSet, "updated_at"));
     }
 }

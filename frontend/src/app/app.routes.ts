@@ -24,6 +24,17 @@ export const routes: Routes = [
       {
         path: 'statistics',
         loadComponent: () => import('./features/statistics/statistics-page').then((module) => module.StatisticsPage),
+      },      {
+        path: 'retail',
+        loadComponent: () => import('./features/retail/retail-page').then((module) => module.RetailPage),
+      },
+      {
+        path: 'solarium',
+        loadComponent: () => import('./features/solarium/solarium-page').then((module) => module.SolariumPage),
+      },
+      {
+        path: 'sauna',
+        loadComponent: () => import('./features/sauna/sauna-page').then((module) => module.SaunaPage),
       },
       {
         path: 'audit',
@@ -43,6 +54,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/products/product-admin-page').then((module) => module.ProductAdminPage),
       },
       {
+        path: 'admin/retail-products',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./features/retail/retail-product-admin-page').then((module) => module.RetailProductAdminPage),
+      },      {
         path: 'admin/employees',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/employees/employees-page').then((module) => module.EmployeesPage),

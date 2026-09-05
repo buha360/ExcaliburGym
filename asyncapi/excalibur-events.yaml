@@ -1,0 +1,270 @@
+asyncapi: 3.0.0
+info:
+  title: Excalibur Gym domain events
+  version: 1.0.0
+  description: Versioned integration events emitted by Excalibur services through transactional outboxes.
+defaultContentType: application/json
+channels:
+  guestEvents:
+    address: excalibur.guest-events.v1
+    messages:
+      guestCreated:
+        $ref: "#/components/messages/GuestCreated"
+  passEvents:
+    address: excalibur.pass-events.v1
+    messages:
+      passSold:
+        $ref: "#/components/messages/PassSold"
+  visitEvents:
+    address: excalibur.visit-events.v1
+    messages:
+      guestCheckedIn:
+        $ref: "#/components/messages/GuestCheckedIn"
+      checkInReversed:
+        $ref: "#/components/messages/CheckInReversed"
+  saunaEvents:
+    address: excalibur.sauna-events.v1
+    messages:
+      saunaReserved:
+        $ref: "#/components/messages/SaunaReserved"
+      saunaReservationCancelled:
+        $ref: "#/components/messages/SaunaReservationCancelled"
+  solariumEvents:
+    address: excalibur.solarium-events.v1
+    messages:
+      solariumMinutesPurchased:
+        $ref: "#/components/messages/SolariumMinutesPurchased"
+      solariumMinutesUsed:
+        $ref: "#/components/messages/SolariumMinutesUsed"
+  retailEvents:
+    address: excalibur.retail-events.v1
+    messages:
+      guestBalanceDeposited:
+        $ref: "#/components/messages/GuestBalanceDeposited"
+      retailSaleCompleted:
+        $ref: "#/components/messages/RetailSaleCompleted"
+operations:
+  receiveGuestEvents:
+    action: receive
+    channel:
+      $ref: "#/channels/guestEvents"
+  receivePassEvents:
+    action: receive
+    channel:
+      $ref: "#/channels/passEvents"
+  receiveVisitEvents:
+    action: receive
+    channel:
+      $ref: "#/channels/visitEvents"
+  receiveSaunaEvents:
+    action: receive
+    channel:
+      $ref: "#/channels/saunaEvents"
+  receiveSolariumEvents:
+    action: receive
+    channel:
+      $ref: "#/channels/solariumEvents"
+  receiveRetailEvents:
+    action: receive
+    channel:
+      $ref: "#/channels/retailEvents"
+components:
+  messages:
+    GuestCreated:
+      name: GuestCreated
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/EventEnvelope"
+          - type: object
+            properties:
+              eventType: { const: GUEST_CREATED }
+              payload:
+                $ref: "#/components/schemas/GuestCreatedPayload"
+    PassSold:
+      name: PassSold
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/EventEnvelope"
+          - type: object
+            properties:
+              eventType: { const: PASS_SOLD }
+              payload:
+                $ref: "#/components/schemas/PassSoldPayload"
+    GuestCheckedIn:
+      name: GuestCheckedIn
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/EventEnvelope"
+          - type: object
+            properties:
+              eventType: { const: GUEST_CHECKED_IN }
+              payload:
+                $ref: "#/components/schemas/GuestCheckedInPayload"
+    CheckInReversed:
+      name: CheckInReversed
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/EventEnvelope"
+          - type: object
+            properties:
+              eventType: { const: CHECK_IN_REVERSED }
+              payload:
+                $ref: "#/components/schemas/CheckInReversedPayload"
+    SaunaReserved:
+      name: SaunaReserved
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/EventEnvelope"
+          - type: object
+            properties:
+              eventType: { const: SAUNA_RESERVED }
+              payload:
+                $ref: "#/components/schemas/SaunaReservedPayload"
+    SaunaReservationCancelled:
+      name: SaunaReservationCancelled
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/EventEnvelope"
+          - type: object
+            properties:
+              eventType: { const: SAUNA_RESERVATION_CANCELLED }
+              payload:
+                $ref: "#/components/schemas/SaunaReservationCancelledPayload"
+    SolariumMinutesPurchased:
+      name: SolariumMinutesPurchased
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/EventEnvelope"
+          - type: object
+            properties:
+              eventType: { const: SOLARIUM_MINUTES_PURCHASED }
+              payload:
+                $ref: "#/components/schemas/SolariumMinutesPurchasedPayload"
+    SolariumMinutesUsed:
+      name: SolariumMinutesUsed
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/EventEnvelope"
+          - type: object
+            properties:
+              eventType: { const: SOLARIUM_MINUTES_USED }
+              payload:
+                $ref: "#/components/schemas/SolariumMinutesUsedPayload"
+    GuestBalanceDeposited:
+      name: GuestBalanceDeposited
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/EventEnvelope"
+          - type: object
+            properties:
+              eventType: { const: GUEST_BALANCE_DEPOSITED }
+              payload:
+                $ref: "#/components/schemas/GuestBalanceDepositedPayload"
+    RetailSaleCompleted:
+      name: RetailSaleCompleted
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/EventEnvelope"
+          - type: object
+            properties:
+              eventType: { const: RETAIL_SALE_COMPLETED }
+              payload:
+                $ref: "#/components/schemas/RetailSaleCompletedPayload"
+  schemas:
+    EventEnvelope:
+      type: object
+      required:
+        [
+          eventId,
+          eventType,
+          eventVersion,
+          aggregateType,
+          aggregateId,
+          actorEmployeeId,
+          occurredAt,
+          payload,
+        ]
+      properties:
+        eventId: { type: string, format: uuid }
+        eventType: { type: string }
+        eventVersion: { type: integer, const: 1 }
+        aggregateType: { type: string }
+        aggregateId: { type: string, format: uuid }
+        actorEmployeeId: { type: string, format: uuid }
+        occurredAt: { type: string, format: date-time }
+        payload: { type: object }
+    GuestCreatedPayload:
+      type: object
+      required: [guestId, registrationType]
+      properties:
+        guestId: { type: string, format: uuid }
+        registrationType: { type: string, enum: [NEW, IMPORTED] }
+    PassSoldPayload:
+      type: object
+      required: [passId, guestId, pricePaid, paymentMethod]
+      properties:
+        passId: { type: string, format: uuid }
+        guestId: { type: string, format: uuid }
+        pricePaid: { type: integer, format: int64, minimum: 0 }
+        paymentMethod:
+          { type: string, enum: [CASH, BANK_CARD, PREPAID_BALANCE] }
+    GuestCheckedInPayload:
+      type: object
+      required: [checkInId, guestId]
+      properties:
+        checkInId: { type: string, format: uuid }
+        guestId: { type: string, format: uuid }
+    CheckInReversedPayload:
+      type: object
+      required: [checkInId, guestId]
+      properties:
+        checkInId: { type: string, format: uuid }
+        guestId: { type: string, format: uuid }
+    SaunaReservedPayload:
+      type: object
+      required: [reservationId, guestId, partySize, durationMinutes]
+      properties:
+        reservationId: { type: string, format: uuid }
+        guestId: { type: string, format: uuid }
+        partySize: { type: integer, minimum: 1, maximum: 3 }
+        durationMinutes: { type: integer, enum: [15, 30, 45, 60] }
+    SaunaReservationCancelledPayload:
+      type: object
+      required: [reservationId, guestId]
+      properties:
+        reservationId: { type: string, format: uuid }
+        guestId: { type: string, format: uuid }
+    SolariumMinutesPurchasedPayload:
+      type: object
+      required: [transactionId, guestId, minutes, pricePaid, paymentMethod]
+      properties:
+        transactionId: { type: string, format: uuid }
+        guestId: { type: string, format: uuid }
+        minutes: { type: integer, minimum: 1 }
+        pricePaid: { type: integer, format: int64, minimum: 0 }
+        paymentMethod:
+          { type: string, enum: [CASH, BANK_CARD, PREPAID_BALANCE] }
+    SolariumMinutesUsedPayload:
+      type: object
+      required: [transactionId, guestId, minutes]
+      properties:
+        transactionId: { type: string, format: uuid }
+        guestId: { type: string, format: uuid }
+        minutes: { type: integer, minimum: 1 }
+    GuestBalanceDepositedPayload:
+      type: object
+      required: [guestId, amount, paymentMethod]
+      properties:
+        guestId: { type: string, format: uuid }
+        amount: { type: integer, format: int64, minimum: 1 }
+        paymentMethod: { type: string, enum: [CASH, BANK_CARD] }
+    RetailSaleCompletedPayload:
+      type: object
+      required: [saleId, totalPrice, paymentMethod, itemCount]
+      properties:
+        saleId: { type: string, format: uuid }
+        guestId: { type: string, format: uuid }
+        totalPrice: { type: integer, format: int64, minimum: 0 }
+        paymentMethod:
+          { type: string, enum: [CASH, BANK_CARD, PREPAID_BALANCE] }
+        itemCount: { type: integer, minimum: 1 }

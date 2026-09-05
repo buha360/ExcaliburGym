@@ -1,0 +1,125 @@
+databaseChangeLog:
+  - changeSet:
+      id: 012-create-retail-and-balance-ledgers
+      author: codex
+      changes:
+        - createTable:
+            tableName: retail_product
+            columns:
+              - column: { name: id, type: VARCHAR(36), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: code, type: VARCHAR(80), constraints: { nullable: false, unique: true } }
+              - column: { name: name, type: VARCHAR(120), constraints: { nullable: false } }
+              - column: { name: default_price, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: active, type: BOOLEAN, defaultValueBoolean: true, constraints: { nullable: false } }
+              - column: { name: created_at, type: VARCHAR(40), constraints: { nullable: false } }
+              - column: { name: updated_at, type: VARCHAR(40), constraints: { nullable: false } }
+        - createTable:
+            tableName: guest_balance_account
+            columns:
+              - column: { name: guest_id, type: VARCHAR(36), constraints: { primaryKey: true, nullable: false, foreignKeyName: fk_balance_account_guest, references: guest(id) } }
+              - column: { name: balance, type: BIGINT, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: updated_at, type: VARCHAR(40), constraints: { nullable: false } }
+        - createTable:
+            tableName: retail_sale
+            columns:
+              - column: { name: id, type: VARCHAR(36), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: guest_id, type: VARCHAR(36), constraints: { nullable: true, foreignKeyName: fk_retail_sale_guest, references: guest(id) } }
+              - column: { name: guest_name, type: VARCHAR(160) }
+              - column: { name: total_price, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: payment_method, type: VARCHAR(32), constraints: { nullable: false } }
+              - column: { name: employee_id, type: VARCHAR(36), constraints: { nullable: false, foreignKeyName: fk_retail_sale_employee, references: employee_account(id) } }
+              - column: { name: employee_name, type: VARCHAR(120), constraints: { nullable: false } }
+              - column: { name: occurred_at, type: VARCHAR(40), constraints: { nullable: false } }
+        - createTable:
+            tableName: retail_sale_item
+            columns:
+              - column: { name: id, type: VARCHAR(36), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: sale_id, type: VARCHAR(36), constraints: { nullable: false, foreignKeyName: fk_retail_item_sale, references: retail_sale(id) } }
+              - column: { name: product_id, type: VARCHAR(36), constraints: { nullable: false, foreignKeyName: fk_retail_item_product, references: retail_product(id) } }
+              - column: { name: product_name, type: VARCHAR(120), constraints: { nullable: false } }
+              - column: { name: unit_price, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: quantity, type: INTEGER, constraints: { nullable: false } }
+              - column: { name: line_total, type: BIGINT, constraints: { nullable: false } }
+        - createTable:
+            tableName: guest_balance_transaction
+            columns:
+              - column: { name: id, type: VARCHAR(36), constraints: { primaryKey: true, nullable: false } }
+              - column: { name: guest_id, type: VARCHAR(36), constraints: { nullable: false, foreignKeyName: fk_balance_tx_guest, references: guest(id) } }
+              - column: { name: guest_name, type: VARCHAR(160), constraints: { nullable: false } }
+              - column: { name: transaction_type, type: VARCHAR(32), constraints: { nullable: false } }
+              - column: { name: amount_delta, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: balance_after, type: BIGINT, constraints: { nullable: false } }
+              - column: { name: payment_method, type: VARCHAR(32) }
+              - column: { name: reference_id, type: VARCHAR(36) }
+              - column: { name: employee_id, type: VARCHAR(36), constraints: { nullable: false, foreignKeyName: fk_balance_tx_employee, references: employee_account(id) } }
+              - column: { name: employee_name, type: VARCHAR(120), constraints: { nullable: false } }
+              - column: { name: occurred_at, type: VARCHAR(40), constraints: { nullable: false } }
+        - createIndex:
+            tableName: guest_balance_transaction
+            indexName: idx_balance_tx_guest_occurred
+            columns:
+              - column: { name: guest_id }
+              - column: { name: occurred_at }
+        - createIndex:
+            tableName: retail_sale
+            indexName: idx_retail_sale_occurred
+            columns:
+              - column: { name: occurred_at }
+        - insert:
+            tableName: retail_product
+            columns:
+              - column: { name: id, value: 30000000-0000-0000-0000-000000000001 }
+              - column: { name: code, value: WATER }
+              - column: { name: name, value: Ásványvíz }
+              - column: { name: default_price, valueNumeric: 0 }
+              - column: { name: active, valueBoolean: true }
+              - column: { name: created_at, value: 2026-01-01T00:00:00Z }
+              - column: { name: updated_at, value: 2026-01-01T00:00:00Z }
+        - insert:
+            tableName: retail_product
+            columns:
+              - column: { name: id, value: 30000000-0000-0000-0000-000000000002 }
+              - column: { name: code, value: COFFEE }
+              - column: { name: name, value: Kávé }
+              - column: { name: default_price, valueNumeric: 0 }
+              - column: { name: active, valueBoolean: true }
+              - column: { name: created_at, value: 2026-01-01T00:00:00Z }
+              - column: { name: updated_at, value: 2026-01-01T00:00:00Z }
+        - insert:
+            tableName: retail_product
+            columns:
+              - column: { name: id, value: 30000000-0000-0000-0000-000000000003 }
+              - column: { name: code, value: CREATINE }
+              - column: { name: name, value: Kreatin }
+              - column: { name: default_price, valueNumeric: 0 }
+              - column: { name: active, valueBoolean: true }
+              - column: { name: created_at, value: 2026-01-01T00:00:00Z }
+              - column: { name: updated_at, value: 2026-01-01T00:00:00Z }
+        - insert:
+            tableName: retail_product
+            columns:
+              - column: { name: id, value: 30000000-0000-0000-0000-000000000004 }
+              - column: { name: code, value: PROTEIN }
+              - column: { name: name, value: Fehérje }
+              - column: { name: default_price, valueNumeric: 0 }
+              - column: { name: active, valueBoolean: true }
+              - column: { name: created_at, value: 2026-01-01T00:00:00Z }
+              - column: { name: updated_at, value: 2026-01-01T00:00:00Z }
+
+  - changeSet:
+      id: 013-use-native-retail-temporal-types-postgresql
+      author: codex
+      dbms: postgresql
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              ALTER TABLE retail_product
+                  ALTER COLUMN created_at TYPE TIMESTAMP WITH TIME ZONE USING created_at::TIMESTAMP WITH TIME ZONE,
+                  ALTER COLUMN updated_at TYPE TIMESTAMP WITH TIME ZONE USING updated_at::TIMESTAMP WITH TIME ZONE;
+              ALTER TABLE guest_balance_account
+                  ALTER COLUMN updated_at TYPE TIMESTAMP WITH TIME ZONE USING updated_at::TIMESTAMP WITH TIME ZONE;
+              ALTER TABLE retail_sale
+                  ALTER COLUMN occurred_at TYPE TIMESTAMP WITH TIME ZONE USING occurred_at::TIMESTAMP WITH TIME ZONE;
+              ALTER TABLE guest_balance_transaction
+                  ALTER COLUMN occurred_at TYPE TIMESTAMP WITH TIME ZONE USING occurred_at::TIMESTAMP WITH TIME ZONE;

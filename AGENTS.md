@@ -4,9 +4,13 @@
 
 Excalibur Gym is a local-first, browser-based administration system replacing the gym's paper membership and reception ledgers. The UI language and end-user terminology are Hungarian. Discuss product decisions with the user in Hungarian.
 
-The repository contains two independent applications:
+The repository contains an incrementally extracted service platform:
 
-- `backend/`: Spring Boot REST API
+- `backend/`: authenticated Spring Boot core REST API
+- `reporting-service/`: event-driven Spring Boot statistics projection service
+- `sauna-service/`: independently deployable Spring Boot sauna reservation service with its own PostgreSQL database
+- `solarium-service/`: independently deployable Spring Boot solarium minute ledger service with its own PostgreSQL database
+- `event-contracts/`: shared, versioned Kafka envelope contract
 - `frontend/`: Angular single-page application
 
 ## Current technology baseline
@@ -19,10 +23,22 @@ The repository contains two independent applications:
 - Authentication: employees and one administrator use a PIN or password
 - Persistence direction: local relational database; SQLite is the current single-computer default
 - Backup direction: consistent compressed database snapshots such as `.db.gz`; text and Excel files are exports, never the primary datastore
+- Cloud/portfolio profile: PostgreSQL per service, Apache Kafka, Docker Compose, and Kubernetes manifests
+- Service extraction strategy: strangler pattern; keep the core operational workflow deployable while extracting bounded capabilities
+- Event API development: contract first with AsyncAPI in addition to HTTP OpenAPI
+- Delivery semantics: transactional outbox with at-least-once publication and idempotent consumers
 
 Do not silently replace a chosen technology or introduce a framework. Record material architectural changes in this file after the user accepts them.
 
 ## Commands
+
+Run the complete Maven reactor from the repository root:
+
+```powershell
+mvn test
+```
+
+The root reactor covers `event-contracts`, `backend`, `sauna-service`, and `reporting-service`.
 
 Run backend commands from `backend/`:
 
@@ -57,6 +73,12 @@ Before handing off a change, run the smallest relevant tests and then the affect
 - Persist important actions transactionally before reporting success in the UI.
 - Prefer append-only financial and audit records. Correct or reverse records instead of deleting history.
 - Keep secrets and plaintext PINs/passwords out of source control. Store PINs/passwords using an appropriate password hash.
+- A service owns its database; one service must never read or migrate another service's schema.
+- Publish cross-service domain events through the transactional outbox, never directly inside the business transaction.
+- Treat Kafka delivery as at-least-once. Every consumer must deduplicate by immutable `eventId` before changing projections.
+- Version event payloads and keep `asyncapi/excalibur-events.yaml` aligned with emitted code.
+- Local mode keeps SQLite and direct statistics without requiring Kafka. The `cloud` profile enables PostgreSQL, Kafka, and the remote reporting projection.
+- Keep the core service at one replica while HTTP sessions are in-memory; externalize session storage before horizontal core scaling.
 
 Demo records are opt-in only. Start a disposable demo database with the `demo` Spring profile; never activate that profile against production data:
 
@@ -117,6 +139,8 @@ The administrator manages gym pass definitions and their current default prices.
 
 Store purchase date, validity start/end, remaining entries where applicable, price, payment method, and the employee who issued or renewed the pass. Renewals create a new historical record; they do not overwrite the old pass.
 
+Gym passes can be paid only by cash or bank card. The internal guest balance is not a valid gym-pass payment method.
+
 Repeated same-day gym entry is allowed because trainers may enter multiple times. Warn the employee about the earlier entry and require confirmation. Do not silently block it.
 
 Incorrect same-day check-ins can be reversed with a mandatory reason. Reversal restores any consumed entry. Preserve both the original action and reversal in the audit history.
@@ -135,13 +159,15 @@ Track remaining minutes and each minute deduction as history. Do not permit an a
 
 ### Sauna
 
-Initial offerings are 60-minute use for 1, 2, or 3 people, plus the sauna entries included in the combined monthly pass.
+Initial sauna bookings are available for 15, 30, 45, or 60 minutes for 1, 2, or 3 people, plus the sauna entries included in the combined monthly pass.
+
+The extracted `sauna-service` owns sauna reservations and their PostgreSQL schema. The authenticated core API is the browser-facing facade and supplies immutable guest and employee snapshots to the service. Reservation and cancellation events are published through the sauna service's transactional outbox.
 
 Support a reservation calendar showing current occupancy and the next available time. Prevent conflicting reservations for the same sauna resource. Store guest, start/end, party size, status, payment data, and employee.
 
 ### Prepaid balance and reception sales
 
-Guests may deposit money and later pay for products from their internal balance. Model this as an immutable transaction ledger; do not store only a mutable total.
+Guests may deposit money and later pay only for reception retail goods (for example coffee, water, protein, or creatine) from their internal balance. Gym passes and other service passes cannot be paid from this balance. Model this as an immutable transaction ledger; do not store only a mutable total.
 
 Payment methods currently include:
 
@@ -150,6 +176,8 @@ Payment methods currently include:
 - internal prepaid balance, where applicable
 
 Each sale item is recorded separately. For example, mineral water and a protein bar must remain two distinct product lines even if paid together. Corrections use reversal/storno records with a reason rather than deletion.
+
+A guest-balance deposit is recognized as revenue when the money is received, under its actual tender (cash or bank card). A later retail purchase paid from that balance is tracked as prepaid usage but must not increase total revenue again.
 
 Do not add inventory tracking until explicitly requested. Whether negative guest balance/debt is allowed remains an unresolved business decision.
 

@@ -1,0 +1,68 @@
+<section class="solarium-page">
+  <header class="page-heading">
+    <div><p>Percegyenleg</p><h1>Szolárium</h1></div>
+    @if (selectedGuest()) { <div class="current-balance"><span>Elérhető egyenleg</span><strong>{{ account()?.remainingMinutes ?? 0 }} <small>perc</small></strong></div> }
+  </header>
+  @if (error()) { <p class="form-error page-feedback" role="alert">{{ error() }}</p> }
+  @if (success()) { <p class="form-success page-feedback" role="status">{{ success() }}</p> }
+
+  <section class="guest-search-card" aria-labelledby="guest-search-title">
+    <div class="search-heading">
+      <span class="search-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 4 4"/></svg>
+      </span>
+      <h2 id="guest-search-title">Vendég kiválasztása</h2>
+    </div>
+    <div class="guest-picker">
+      <label class="field"><span>Vendég neve</span><input type="search" [formControl]="guestSearch" placeholder="Kezdj el gépelni…" autocomplete="off"></label>
+      @if (selectedGuest()) {
+        <div class="selected-guest"><div><strong>{{ selectedGuest()?.fullName }}</strong><small>Szolárium-egyenleg megnyitva</small></div><button type="button" (click)="clearGuest()">Másik vendég</button></div>
+      } @else if (guestResults().length) {
+        <div class="guest-results" role="listbox" aria-label="Vendégtalálatok">
+          @for (guest of guestResults(); track guest.id) { <button type="button" role="option" (click)="selectGuest(guest)"><strong>{{ guest.fullName }}</strong><span>Kiválasztás →</span></button> }
+        </div>
+      } @else if (searchingGuests()) { <p class="search-note">Keresés…</p> }
+    </div>
+  </section>
+
+  @if (selectedGuest()) {
+    <div class="operation-layout">
+      <form class="operation-card purchase-card" [formGroup]="purchaseForm" (ngSubmit)="purchaseMinutes()">
+        <div class="card-heading"><span class="eyebrow">Feltöltés</span><h2>Percek vásárlása</h2><p>Válaszd ki a csomagot és a fizetési módot.</p></div>
+        <fieldset class="product-options"><legend>Szolárium csomag</legend>
+          @if (loadingProducts()) { <div class="loading-row">Árlista betöltése…</div> }
+          @else { @for (product of products(); track product.id) {
+            <label [class.unavailable]="product.defaultPrice <= 0 || !product.active"><input type="radio" formControlName="productId" [value]="product.id" [disabled]="product.defaultPrice <= 0 || !product.active"><span><span><strong>{{ product.name }}</strong><small>{{ product.minutesPerUnit }} perc</small></span><b>{{ product.defaultPrice > 0 ? price(product.defaultPrice) : 'Ár nincs beállítva' }}</b></span></label>
+          } }
+        </fieldset>
+        <div class="purchase-details">
+          <label class="field"><span>Darabszám</span><input type="number" min="1" max="20" formControlName="quantity"></label>
+          <fieldset class="payment-options"><legend>Fizetési mód</legend>
+            <label><input type="radio" formControlName="paymentMethod" [value]="paymentMethods.Cash"><span>Készpénz</span></label>
+            <label><input type="radio" formControlName="paymentMethod" [value]="paymentMethods.BankCard"><span>Bankkártya</span></label>
+          </fieldset>
+        </div>
+        <button class="button button-primary button-large" type="submit" [disabled]="saving() || purchaseForm.invalid">{{ saving() ? 'Mentés…' : 'Percek jóváírása' }}</button>
+      </form>
+
+      <form class="operation-card usage-card" [formGroup]="usageForm" (ngSubmit)="useMinutes()">
+        <div class="card-heading"><span class="eyebrow">Használat</span><h2>Percek levonása</h2><p>A ténylegesen felhasznált egész perceket rögzítsd.</p></div>
+        <div class="usage-balance"><span>Jelenlegi egyenleg</span><strong>{{ account()?.remainingMinutes ?? 0 }}</strong><small>perc</small></div>
+        <label class="field usage-input"><span>Felhasznált idő</span><div><input type="number" min="1" max="1000" formControlName="minutes"><b>perc</b></div></label>
+        <button class="button usage-button button-large" type="submit" [disabled]="saving() || usageForm.invalid || (account()?.remainingMinutes ?? 0) < 1">{{ saving() ? 'Mentés…' : 'Használat rögzítése' }}</button>
+      </form>
+    </div>
+
+    <section class="history-panel" aria-labelledby="history-title">
+      <div class="history-heading"><div><span class="eyebrow">Napló</span><h2 id="history-title">Szolárium előzmények</h2></div><span>{{ account()?.transactions?.length ?? 0 }} bejegyzés</span></div>
+      @if (loadingAccount()) { <div class="history-empty">Egyenleg és előzmények betöltése…</div> }
+      @else { <div class="transaction-list">
+        @for (transaction of account()?.transactions ?? []; track transaction.id) {
+          <article class="transaction-row" [class.usage]="transaction.type === 'USAGE'"><span class="transaction-mark" aria-hidden="true">@if (transaction.type === 'PURCHASE') {<svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg>} @else {<svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg>}</span><div class="transaction-main"><strong>{{ transactionTitle(transaction) }}</strong><small>{{ occurredAt(transaction.occurredAt) }} · {{ transaction.employeeName }}</small></div><div class="transaction-value"><strong>{{ transaction.minutesDelta > 0 ? '+' : '' }}{{ transaction.minutesDelta }} perc</strong><small>Egyenleg: {{ transaction.balanceAfter }} perc</small></div></article>
+        } @empty { <div class="history-empty"><span>☀</span><strong>Még nincs szolárium-előzmény</strong><p>Az első vásárlás vagy használat itt fog megjelenni.</p></div> }
+      </div> }
+    </section>
+  } @else {
+    <section class="welcome-state"><span aria-hidden="true">☀</span><div><strong>Először válassz vendéget</strong><p>Ezután egy helyen látod az egyenlegét, a csomagokat és a teljes felhasználási előzményt.</p></div></section>
+  }
+</section>

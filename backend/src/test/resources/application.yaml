@@ -5,3 +5,11 @@ spring:
     hikari:
       maximum-pool-size: 1
       connection-init-sql: "PRAGMA foreign_keys=ON"
+
+excalibur:
+  sauna:
+    base-url: http://localhost:18082
+    internal-api-key: test-internal-key
+  solarium:
+    base-url: http://localhost:18083
+    internal-api-key: test-internal-key

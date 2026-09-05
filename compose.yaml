@@ -1,0 +1,136 @@
+name: excalibur-gym
+
+services:
+  core-db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${CORE_DB_NAME:?Copy .env.example to .env}
+      POSTGRES_USER: ${CORE_DB_USERNAME:?Copy .env.example to .env}
+      POSTGRES_PASSWORD: ${CORE_DB_PASSWORD:?Copy .env.example to .env}
+    volumes:
+      - core-db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+  reporting-db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${REPORTING_DB_NAME:?Copy .env.example to .env}
+      POSTGRES_USER: ${REPORTING_DB_USERNAME:?Copy .env.example to .env}
+      POSTGRES_PASSWORD: ${REPORTING_DB_PASSWORD:?Copy .env.example to .env}
+    volumes:
+      - reporting-db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+  sauna-db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${SAUNA_DB_NAME:?Copy .env.example to .env}
+      POSTGRES_USER: ${SAUNA_DB_USERNAME:?Copy .env.example to .env}
+      POSTGRES_PASSWORD: ${SAUNA_DB_PASSWORD:?Copy .env.example to .env}
+    volumes: [sauna-db-data:/var/lib/postgresql]
+    healthcheck: {test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"], interval: 5s, timeout: 5s, retries: 20}
+    restart: unless-stopped
+  solarium-db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: ${SOLARIUM_DB_NAME:?Copy .env.example to .env}
+      POSTGRES_USER: ${SOLARIUM_DB_USERNAME:?Copy .env.example to .env}
+      POSTGRES_PASSWORD: ${SOLARIUM_DB_PASSWORD:?Copy .env.example to .env}
+    volumes: [solarium-db-data:/var/lib/postgresql]
+    healthcheck: {test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"], interval: 5s, timeout: 5s, retries: 20}
+    restart: unless-stopped
+  broker:
+    image: apache/kafka:4.1.2
+    hostname: broker
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: CONTROLLER://:29093,PLAINTEXT://:19092,PLAINTEXT_HOST://:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:19092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker:29093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 3
+    ports: ["9092:9092"]
+    healthcheck: {test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"], interval: 10s, timeout: 10s, retries: 20, start_period: 20s}
+    restart: unless-stopped
+  kafka-init:
+    image: apache/kafka:4.1.2
+    depends_on: {broker: {condition: service_healthy}}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        for topic in excalibur.guest-events.v1 excalibur.pass-events.v1 excalibur.visit-events.v1 excalibur.sauna-events.v1 excalibur.solarium-events.v1 excalibur.retail-events.v1 excalibur.guest-events.v1.DLT excalibur.pass-events.v1.DLT excalibur.visit-events.v1.DLT excalibur.sauna-events.v1.DLT excalibur.solarium-events.v1.DLT excalibur.retail-events.v1.DLT; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server broker:19092 --create --if-not-exists --topic "$$topic" --partitions 3 --replication-factor 1
+        done
+    restart: "no"
+  reporting-service:
+    build: {context: ., dockerfile: reporting-service/Dockerfile}
+    environment:
+      REPORTING_DATABASE_URL: jdbc:postgresql://reporting-db:5432/${REPORTING_DB_NAME}
+      REPORTING_DATABASE_USERNAME: ${REPORTING_DB_USERNAME}
+      REPORTING_DATABASE_PASSWORD: ${REPORTING_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: broker:19092
+      REPORTING_INTERNAL_API_KEY: ${REPORTING_INTERNAL_API_KEY:?Set a random internal API key}
+    depends_on: {reporting-db: {condition: service_healthy}, kafka-init: {condition: service_completed_successfully}}
+    restart: unless-stopped
+  sauna-service:
+    build: {context: ., dockerfile: sauna-service/Dockerfile}
+    environment:
+      SAUNA_DATABASE_URL: jdbc:postgresql://sauna-db:5432/${SAUNA_DB_NAME}
+      SAUNA_DATABASE_USERNAME: ${SAUNA_DB_USERNAME}
+      SAUNA_DATABASE_PASSWORD: ${SAUNA_DB_PASSWORD}
+      SAUNA_INTERNAL_API_KEY: ${SAUNA_INTERNAL_API_KEY:?Set a random internal API key}
+      KAFKA_BOOTSTRAP_SERVERS: broker:19092
+    depends_on: {sauna-db: {condition: service_healthy}, kafka-init: {condition: service_completed_successfully}}
+    restart: unless-stopped
+  solarium-service:
+    build: {context: ., dockerfile: solarium-service/Dockerfile}
+    environment:
+      SOLARIUM_DATABASE_URL: jdbc:postgresql://solarium-db:5432/${SOLARIUM_DB_NAME}
+      SOLARIUM_DATABASE_USERNAME: ${SOLARIUM_DB_USERNAME}
+      SOLARIUM_DATABASE_PASSWORD: ${SOLARIUM_DB_PASSWORD}
+      SOLARIUM_INTERNAL_API_KEY: ${SOLARIUM_INTERNAL_API_KEY:?Set a random internal API key}
+      KAFKA_BOOTSTRAP_SERVERS: broker:19092
+    depends_on: {solarium-db: {condition: service_healthy}, kafka-init: {condition: service_completed_successfully}}
+    restart: unless-stopped
+  core-service:
+    build: {context: ., dockerfile: backend/Dockerfile}
+    environment:
+      SPRING_PROFILES_ACTIVE: cloud
+      CORE_DATABASE_URL: jdbc:postgresql://core-db:5432/${CORE_DB_NAME}
+      CORE_DATABASE_USERNAME: ${CORE_DB_USERNAME}
+      CORE_DATABASE_PASSWORD: ${CORE_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: broker:19092
+      REPORTING_SERVICE_URL: http://reporting-service:8081
+      REPORTING_INTERNAL_API_KEY: ${REPORTING_INTERNAL_API_KEY:?Set a random internal API key}
+      SAUNA_SERVICE_URL: http://sauna-service:8082
+      SAUNA_INTERNAL_API_KEY: ${SAUNA_INTERNAL_API_KEY:?Set a random internal API key}
+      SOLARIUM_SERVICE_URL: http://solarium-service:8083
+      SOLARIUM_INTERNAL_API_KEY: ${SOLARIUM_INTERNAL_API_KEY:?Set a random internal API key}
+    depends_on: {core-db: {condition: service_healthy}, reporting-service: {condition: service_started}, sauna-service: {condition: service_started}, solarium-service: {condition: service_started}, kafka-init: {condition: service_completed_successfully}}
+    restart: unless-stopped
+  frontend:
+    build: {context: ., dockerfile: frontend/Dockerfile}
+    ports: ["${FRONTEND_PORT:-4210}:8080"]
+    depends_on: {core-service: {condition: service_started}}
+    restart: unless-stopped
+volumes:
+  core-db-data:
+  reporting-db-data:
+  sauna-db-data:
+  solarium-db-data:

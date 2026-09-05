@@ -12,6 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import static com.wardanger.excalibur.shared.persistence.JdbcTemporalSupport.instant;
+import static com.wardanger.excalibur.shared.persistence.JdbcTemporalSupport.timestamp;
+
 @Repository
 @RequiredArgsConstructor
 public class JdbcAuditLogRepository implements AuditLogRepository {
@@ -27,14 +30,14 @@ public class JdbcAuditLogRepository implements AuditLogRepository {
                 """,
                 entry.id().toString(), entry.employeeId().toString(), entry.employeeName(), entry.action(),
                 entry.entityType(), entry.entityId() == null ? null : entry.entityId().toString(),
-                entry.summary(), entry.details(), entry.occurredAt().toString());
+                entry.summary(), entry.details(), timestamp(entry.occurredAt()));
     }
 
     @Override
     public List<AuditEntry> findLatest(int limit) {
         return jdbcTemplate.query("""
                 SELECT * FROM audit_log
-                ORDER BY occurred_at DESC, rowid DESC
+                ORDER BY occurred_at DESC, id DESC
                 LIMIT ?
                 """, JdbcAuditLogRepository::mapEntry, limit);
     }
@@ -44,7 +47,7 @@ public class JdbcAuditLogRepository implements AuditLogRepository {
         return jdbcTemplate.query("""
                 SELECT * FROM audit_log
                 WHERE employee_id = ?
-                ORDER BY occurred_at DESC, rowid DESC
+                ORDER BY occurred_at DESC, id DESC
                 LIMIT ?
                 """, JdbcAuditLogRepository::mapEntry, employeeId.toString(), limit);
     }
@@ -60,6 +63,6 @@ public class JdbcAuditLogRepository implements AuditLogRepository {
                 entityId == null ? null : UUID.fromString(entityId),
                 resultSet.getString("summary"),
                 resultSet.getString("details"),
-                Instant.parse(resultSet.getString("occurred_at")));
+                instant(resultSet, "occurred_at"));
     }
 }

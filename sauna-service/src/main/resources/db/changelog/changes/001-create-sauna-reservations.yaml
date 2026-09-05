@@ -1,0 +1,59 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-sauna-reservation
+      author: codex
+      changes:
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS btree_gist
+        - createTable:
+            tableName: sauna_reservation
+            columns:
+              - column: { name: id, type: UUID, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: guest_id, type: UUID, constraints: { nullable: false } }
+              - column: { name: guest_name, type: VARCHAR(160), constraints: { nullable: false } }
+              - column: { name: start_at, type: TIMESTAMP WITH TIME ZONE, constraints: { nullable: false } }
+              - column: { name: end_at, type: TIMESTAMP WITH TIME ZONE, constraints: { nullable: false } }
+              - column: { name: party_size, type: SMALLINT, constraints: { nullable: false } }
+              - column: { name: status, type: VARCHAR(20), constraints: { nullable: false } }
+              - column: { name: created_at, type: TIMESTAMP WITH TIME ZONE, constraints: { nullable: false } }
+              - column: { name: created_by_employee_id, type: UUID, constraints: { nullable: false } }
+              - column: { name: created_by_employee_name, type: VARCHAR(160), constraints: { nullable: false } }
+              - column: { name: cancelled_at, type: TIMESTAMP WITH TIME ZONE }
+              - column: { name: cancelled_by_employee_id, type: UUID }
+              - column: { name: cancelled_by_employee_name, type: VARCHAR(160) }
+              - column: { name: cancellation_reason, type: VARCHAR(500) }
+        - sql:
+            sql: >
+              ALTER TABLE sauna_reservation
+              ADD CONSTRAINT chk_sauna_party_size CHECK (party_size BETWEEN 1 AND 3),
+              ADD CONSTRAINT chk_sauna_duration CHECK (end_at = start_at + INTERVAL '60 minutes'),
+              ADD CONSTRAINT chk_sauna_status CHECK (status IN ('RESERVED', 'CANCELLED')),
+              ADD CONSTRAINT ex_sauna_no_overlap
+              EXCLUDE USING gist (tstzrange(start_at, end_at, '[)') WITH &&)
+              WHERE (status = 'RESERVED')
+        - createIndex:
+            tableName: sauna_reservation
+            indexName: idx_sauna_reservation_start
+            columns:
+              - column: { name: start_at }
+  - changeSet:
+      id: 002-create-sauna-outbox
+      author: codex
+      changes:
+        - createTable:
+            tableName: outbox_event
+            columns:
+              - column: { name: id, type: UUID, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: topic, type: VARCHAR(160), constraints: { nullable: false } }
+              - column: { name: aggregate_id, type: UUID, constraints: { nullable: false } }
+              - column: { name: payload, type: TEXT, constraints: { nullable: false } }
+              - column: { name: occurred_at, type: TIMESTAMP WITH TIME ZONE, constraints: { nullable: false } }
+              - column: { name: published_at, type: TIMESTAMP WITH TIME ZONE }
+              - column: { name: attempts, type: INTEGER, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: last_error, type: VARCHAR(1000) }
+        - createIndex:
+            tableName: outbox_event
+            indexName: idx_sauna_outbox_pending
+            columns:
+              - column: { name: published_at }
+              - column: { name: occurred_at }

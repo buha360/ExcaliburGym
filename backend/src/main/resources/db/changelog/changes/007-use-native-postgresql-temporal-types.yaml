@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - changeSet:
+      id: 011-use-native-postgresql-temporal-types
+      author: codex
+      dbms: postgresql
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              ALTER TABLE employee_account
+                  ALTER COLUMN created_at TYPE TIMESTAMP WITH TIME ZONE USING created_at AT TIME ZONE 'UTC',
+                  ALTER COLUMN updated_at TYPE TIMESTAMP WITH TIME ZONE USING updated_at AT TIME ZONE 'UTC';
+
+              ALTER TABLE employee_login_event
+                  ALTER COLUMN occurred_at TYPE TIMESTAMP WITH TIME ZONE USING occurred_at AT TIME ZONE 'UTC';
+
+              ALTER TABLE guest
+                  ALTER COLUMN created_at TYPE TIMESTAMP WITH TIME ZONE USING created_at::TIMESTAMP WITH TIME ZONE;
+
+              ALTER TABLE guest_pass
+                  ALTER COLUMN purchased_at TYPE TIMESTAMP WITH TIME ZONE USING purchased_at::TIMESTAMP WITH TIME ZONE,
+                  ALTER COLUMN valid_from TYPE DATE USING valid_from::DATE,
+                  ALTER COLUMN valid_until TYPE DATE USING valid_until::DATE,
+                  ALTER COLUMN invalidated_at TYPE TIMESTAMP WITH TIME ZONE USING invalidated_at::TIMESTAMP WITH TIME ZONE;
+
+              ALTER TABLE guest_check_in
+                  ALTER COLUMN checked_in_at TYPE TIMESTAMP WITH TIME ZONE USING checked_in_at::TIMESTAMP WITH TIME ZONE,
+                  ALTER COLUMN reversed_at TYPE TIMESTAMP WITH TIME ZONE USING reversed_at::TIMESTAMP WITH TIME ZONE;
+
+              ALTER TABLE audit_log
+                  ALTER COLUMN occurred_at TYPE TIMESTAMP WITH TIME ZONE USING occurred_at AT TIME ZONE 'UTC';
+
+              ALTER TABLE outbox_event
+                  ALTER COLUMN occurred_at TYPE TIMESTAMP WITH TIME ZONE USING occurred_at::TIMESTAMP WITH TIME ZONE,
+                  ALTER COLUMN published_at TYPE TIMESTAMP WITH TIME ZONE USING published_at::TIMESTAMP WITH TIME ZONE;

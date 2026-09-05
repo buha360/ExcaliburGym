@@ -59,4 +59,25 @@
       }
     </section>
   </div>
-</section>
+
+  <section class="solarium-pricing" aria-labelledby="solarium-pricing-title">
+    <div class="panel-heading">
+      <span class="eyebrow">Szolárium</span>
+      <h2 id="solarium-pricing-title">Perc- és bérletárak</h2>
+      <p>Az itt beállított ár után válik megvásárolhatóvá a csomag a szolárium oldalon.</p>
+    </div>
+    <div class="solarium-price-list">
+      @for (product of solariumProducts(); track product.id) {
+        <article class="solarium-price-row">
+          <div><strong>{{ product.name }}</strong><span>{{ product.minutesPerUnit }} perc kerül a vendég egyenlegére</span></div>
+          <label class="price-input">
+            <input #priceInput type="number" min="0" max="10000000" step="100" [value]="product.defaultPrice" [attr.aria-label]="product.name + ' ára forintban'">
+            <b>Ft</b>
+          </label>
+          <button class="button" type="button" (click)="saveSolariumPrice(product, priceInput)" [disabled]="saving()">Ár mentése</button>
+        </article>
+      } @empty {
+        <p class="empty-state">A szoláriumárak betöltése…</p>
+      }
+    </div>
+  </section></section>

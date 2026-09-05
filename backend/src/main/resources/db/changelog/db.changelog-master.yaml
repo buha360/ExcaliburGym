@@ -9,3 +9,9 @@ databaseChangeLog:
       file: db/changelog/changes/004-create-audit-log.yaml
   - include:
       file: db/changelog/changes/005-load-demo-data.yaml
+  - include:
+      file: db/changelog/changes/006-create-outbox-and-postgres-compat.yaml
+  - include:
+      file: db/changelog/changes/007-use-native-postgresql-temporal-types.yaml
+  - include:
+      file: db/changelog/changes/008-create-retail-and-balance-ledgers.yaml

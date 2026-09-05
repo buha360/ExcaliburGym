@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-allow-selectable-sauna-duration
+      author: codex
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE sauna_reservation
+              DROP CONSTRAINT chk_sauna_duration,
+              ADD CONSTRAINT chk_sauna_duration
+              CHECK (end_at - start_at IN (
+                INTERVAL '15 minutes',
+                INTERVAL '30 minutes',
+                INTERVAL '45 minutes',
+                INTERVAL '60 minutes'
+              ));

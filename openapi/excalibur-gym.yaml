@@ -453,6 +453,247 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+  /api/v1/sauna/reservations:
+    get:
+      tags:
+        - Sauna
+      operationId: getSaunaSchedule
+      summary: Return the sauna reservations for a selected day
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Daily sauna schedule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaunaSchedule"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    post:
+      tags:
+        - Sauna
+      operationId: createSaunaReservation
+      summary: Reserve the sauna for a selected interval
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSaunaReservationRequest"
+      responses:
+        "201":
+          description: Reservation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaunaReservation"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/sauna/reservations/{reservationId}/cancellation:
+    post:
+      tags:
+        - Sauna
+      operationId: cancelSaunaReservation
+      summary: Cancel a sauna reservation while preserving its history
+      parameters:
+        - name: reservationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelSaunaReservationRequest"
+      responses:
+        "200":
+          description: Reservation cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaunaReservation"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/solarium/products:
+    get:
+      tags: [Solarium]
+      operationId: listSolariumProducts
+      summary: List active solarium products
+      responses:
+        "200":
+          description: Active solarium products
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SolariumProduct" }
+  /api/v1/solarium/accounts/{guestId}:
+    get:
+      tags: [Solarium]
+      operationId: getSolariumAccount
+      summary: Return a guest's solarium minute balance and history
+      parameters:
+        - $ref: "#/components/parameters/GuestId"
+      responses:
+        "200":
+          description: Solarium account
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SolariumAccount" }
+  /api/v1/solarium/purchases:
+    post:
+      tags: [Solarium]
+      operationId: purchaseSolariumMinutes
+      summary: Purchase a solarium minute product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PurchaseSolariumRequest" }
+      responses:
+        "201":
+          description: Minutes purchased
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SolariumAccount" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /api/v1/solarium/usages:
+    post:
+      tags: [Solarium]
+      operationId: useSolariumMinutes
+      summary: Deduct used solarium minutes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UseSolariumMinutesRequest" }
+      responses:
+        "201":
+          description: Minutes used
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SolariumAccount" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /api/v1/admin/solarium/products/{productId}:
+    put:
+      tags: [Solarium]
+      operationId: updateSolariumProduct
+      summary: Update a solarium product price or availability
+      parameters:
+        - $ref: "#/components/parameters/ProductId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateSolariumProductRequest" }
+      responses:
+        "200":
+          description: Updated solarium product
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SolariumProduct" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/retail/products:
+    get:
+      tags: [Retail]
+      operationId: listRetailProducts
+      summary: List active reception products
+      responses:
+        "200":
+          description: Active reception products
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/RetailProduct" } }
+  /api/v1/admin/retail-products:
+    get:
+      tags: [Retail]
+      operationId: listAllRetailProducts
+      responses:
+        "200":
+          description: All reception products
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/RetailProduct" } }
+    post:
+      tags: [Retail]
+      operationId: createRetailProduct
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/UpsertRetailProductRequest" } } }
+      responses:
+        "201":
+          description: Product created
+          content: { application/json: { schema: { $ref: "#/components/schemas/RetailProduct" } } }
+  /api/v1/admin/retail-products/{productId}:
+    put:
+      tags: [Retail]
+      operationId: updateRetailProduct
+      parameters: [{ $ref: "#/components/parameters/ProductId" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/UpsertRetailProductRequest" } } }
+      responses:
+        "200":
+          description: Product updated
+          content: { application/json: { schema: { $ref: "#/components/schemas/RetailProduct" } } }
+    delete:
+      tags: [Retail]
+      operationId: deactivateRetailProduct
+      parameters: [{ $ref: "#/components/parameters/ProductId" }]
+      responses:
+        "204": { description: Product deactivated }
+  /api/v1/retail/sales:
+    post:
+      tags: [Retail]
+      operationId: createRetailSale
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/CreateRetailSaleRequest" } } }
+      responses:
+        "201":
+          description: Sale recorded
+          content: { application/json: { schema: { $ref: "#/components/schemas/RetailSale" } } }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /api/v1/guests/{guestId}/balance:
+    get:
+      tags: [Retail]
+      operationId: getGuestBalance
+      parameters: [{ $ref: "#/components/parameters/GuestId" }]
+      responses:
+        "200":
+          description: Guest balance and immutable transaction history
+          content: { application/json: { schema: { $ref: "#/components/schemas/GuestBalanceAccount" } } }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v1/guests/{guestId}/balance/deposits:
+    post:
+      tags: [Retail]
+      operationId: createGuestBalanceDeposit
+      parameters: [{ $ref: "#/components/parameters/GuestId" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/CreateBalanceDepositRequest" } } }
+      responses:
+        "201":
+          description: Balance deposit recorded
+          content: { application/json: { schema: { $ref: "#/components/schemas/GuestBalanceAccount" } } }
   /api/v1/statistics/summary:
     get:
       tags:
@@ -544,6 +785,12 @@ components:
             $ref: "#/components/schemas/ApiError"
     NotFound:
       description: The requested resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    ServiceUnavailable:
+      description: A downstream service is temporarily unavailable
       content:
         application/json:
           schema:
@@ -723,6 +970,11 @@ components:
         - CASH
         - BANK_CARD
         - PREPAID_BALANCE
+    PassSalePaymentMethod:
+      type: string
+      enum:
+        - CASH
+        - BANK_CARD
     StatisticsPeriod:
       type: string
       enum:
@@ -863,7 +1115,7 @@ components:
           type: string
           format: date
         paymentMethod:
-          $ref: "#/components/schemas/PaymentMethod"
+          $ref: "#/components/schemas/PassSalePaymentMethod"
     CheckInGuestRequest:
       type: object
       required:
@@ -961,6 +1213,124 @@ components:
             - PENDING
             - EXPIRED
             - INVALIDATED
+    SaunaReservationStatus:
+      type: string
+      enum:
+        - RESERVED
+        - CANCELLED
+    SaunaReservation:
+      type: object
+      required:
+        - id
+        - guestId
+        - guestName
+        - startAt
+        - endAt
+        - partySize
+        - status
+        - createdAt
+        - createdByEmployeeName
+      properties:
+        id: { type: string, format: uuid }
+        guestId: { type: string, format: uuid }
+        guestName: { type: string }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        partySize: { type: integer, format: int32, minimum: 1, maximum: 3 }
+        status: { $ref: "#/components/schemas/SaunaReservationStatus" }
+        createdAt: { type: string, format: date-time }
+        createdByEmployeeName: { type: string }
+        cancelledAt: { type: string, format: date-time, nullable: true }
+        cancelledByEmployeeName: { type: string, nullable: true }
+        cancellationReason: { type: string, nullable: true }
+    SaunaSchedule:
+      type: object
+      required:
+        - date
+        - reservations
+      properties:
+        date: { type: string, format: date }
+        reservations:
+          type: array
+          items:
+            $ref: "#/components/schemas/SaunaReservation"
+    CreateSaunaReservationRequest:
+      type: object
+      required:
+        - guestId
+        - startAt
+        - partySize
+        - durationMinutes
+      properties:
+        guestId: { type: string, format: uuid }
+        startAt: { type: string, format: date-time }
+        partySize: { type: integer, format: int32, minimum: 1, maximum: 3 }
+        durationMinutes: { type: integer, format: int32, minimum: 15, maximum: 60, multipleOf: 15 }
+    CancelSaunaReservationRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason: { type: string, minLength: 3, maxLength: 500 }
+    SolariumPaymentMethod:
+      type: string
+      enum: [CASH, BANK_CARD, PREPAID_BALANCE]
+    SolariumProduct:
+      type: object
+      required: [id, code, name, minutesPerUnit, defaultPrice, active, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        minutesPerUnit: { type: integer, minimum: 1 }
+        defaultPrice: { type: integer, format: int64, minimum: 0 }
+        active: { type: boolean }
+        updatedAt: { type: string, format: date-time }
+    SolariumTransaction:
+      type: object
+      required: [id, type, minutesDelta, balanceAfter, occurredAt, employeeName]
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string, enum: [PURCHASE, USAGE] }
+        minutesDelta: { type: integer }
+        balanceAfter: { type: integer, minimum: 0 }
+        productName: { type: string, nullable: true }
+        quantity: { type: integer, nullable: true }
+        pricePaid: { type: integer, format: int64, nullable: true }
+        paymentMethod: { $ref: "#/components/schemas/SolariumPaymentMethod" }
+        occurredAt: { type: string, format: date-time }
+        employeeName: { type: string }
+    SolariumAccount:
+      type: object
+      required: [guestId, guestName, remainingMinutes, transactions]
+      properties:
+        guestId: { type: string, format: uuid }
+        guestName: { type: string }
+        remainingMinutes: { type: integer, minimum: 0 }
+        transactions:
+          type: array
+          items: { $ref: "#/components/schemas/SolariumTransaction" }
+    PurchaseSolariumRequest:
+      type: object
+      required: [guestId, productId, quantity, paymentMethod]
+      properties:
+        guestId: { type: string, format: uuid }
+        productId: { type: string, format: uuid }
+        quantity: { type: integer, minimum: 1, maximum: 1000 }
+        paymentMethod: { $ref: "#/components/schemas/SolariumPaymentMethod" }
+    UseSolariumMinutesRequest:
+      type: object
+      required: [guestId, minutes]
+      properties:
+        guestId: { type: string, format: uuid }
+        minutes: { type: integer, minimum: 1, maximum: 1000 }
+    UpdateSolariumProductRequest:
+      type: object
+      required: [name, defaultPrice, active]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        defaultPrice: { type: integer, format: int64, minimum: 0, maximum: 10000000 }
+        active: { type: boolean }
     StatisticsSummary:
       type: object
       required:
@@ -970,6 +1340,7 @@ components:
         - visits
         - newGuests
         - soldPasses
+        - saunaReservations
         - totalRevenue
         - cashRevenue
         - bankCardRevenue
@@ -992,6 +1363,9 @@ components:
         soldPasses:
           type: integer
           format: int64
+        saunaReservations:
+          type: integer
+          format: int64
         totalRevenue:
           type: integer
           format: int64
@@ -1004,6 +1378,95 @@ components:
         prepaidBalanceRevenue:
           type: integer
           format: int64
+    RetailPaymentMethod:
+      type: string
+      enum: [CASH, BANK_CARD, PREPAID_BALANCE]
+    DepositPaymentMethod:
+      type: string
+      enum: [CASH, BANK_CARD]
+    RetailProduct:
+      type: object
+      required: [id, code, name, defaultPrice, active]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        defaultPrice: { type: integer, format: int64, minimum: 0 }
+        active: { type: boolean }
+    UpsertRetailProductRequest:
+      type: object
+      required: [name, defaultPrice]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        defaultPrice: { type: integer, format: int64, minimum: 0, maximum: 10000000 }
+    RetailSaleItemRequest:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId: { type: string, format: uuid }
+        quantity: { type: integer, format: int32, minimum: 1, maximum: 100 }
+    CreateRetailSaleRequest:
+      type: object
+      required: [paymentMethod, items]
+      properties:
+        guestId: { type: string, format: uuid, nullable: true }
+        paymentMethod: { $ref: "#/components/schemas/RetailPaymentMethod" }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items: { $ref: "#/components/schemas/RetailSaleItemRequest" }
+    RetailSaleItem:
+      type: object
+      required: [id, productId, productName, unitPrice, quantity, lineTotal]
+      properties:
+        id: { type: string, format: uuid }
+        productId: { type: string, format: uuid }
+        productName: { type: string }
+        unitPrice: { type: integer, format: int64 }
+        quantity: { type: integer, format: int32 }
+        lineTotal: { type: integer, format: int64 }
+    RetailSale:
+      type: object
+      required: [id, totalPrice, paymentMethod, employeeName, occurredAt, items]
+      properties:
+        id: { type: string, format: uuid }
+        guestId: { type: string, format: uuid, nullable: true }
+        guestName: { type: string, nullable: true }
+        totalPrice: { type: integer, format: int64 }
+        paymentMethod: { $ref: "#/components/schemas/RetailPaymentMethod" }
+        employeeName: { type: string }
+        occurredAt: { type: string, format: date-time }
+        items: { type: array, items: { $ref: "#/components/schemas/RetailSaleItem" } }
+    BalanceTransactionType:
+      type: string
+      enum: [DEPOSIT, PURCHASE]
+    GuestBalanceTransaction:
+      type: object
+      required: [id, type, amountDelta, balanceAfter, employeeName, occurredAt]
+      properties:
+        id: { type: string, format: uuid }
+        type: { $ref: "#/components/schemas/BalanceTransactionType" }
+        amountDelta: { type: integer, format: int64 }
+        balanceAfter: { type: integer, format: int64 }
+        paymentMethod: { $ref: "#/components/schemas/DepositPaymentMethod" }
+        referenceId: { type: string, format: uuid, nullable: true }
+        employeeName: { type: string }
+        occurredAt: { type: string, format: date-time }
+    GuestBalanceAccount:
+      type: object
+      required: [guestId, guestName, balance, transactions]
+      properties:
+        guestId: { type: string, format: uuid }
+        guestName: { type: string }
+        balance: { type: integer, format: int64, minimum: 0 }
+        transactions: { type: array, items: { $ref: "#/components/schemas/GuestBalanceTransaction" } }
+    CreateBalanceDepositRequest:
+      type: object
+      required: [amount, paymentMethod]
+      properties:
+        amount: { type: integer, format: int64, minimum: 1, maximum: 10000000 }
+        paymentMethod: { $ref: "#/components/schemas/DepositPaymentMethod" }
     AuditLogEntry:
       type: object
       required:

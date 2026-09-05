@@ -16,6 +16,11 @@ import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.stereotype.Repository;
 import lombok.RequiredArgsConstructor;
 
+import static com.wardanger.excalibur.shared.persistence.JdbcTemporalSupport.date;
+import static com.wardanger.excalibur.shared.persistence.JdbcTemporalSupport.instant;
+import static com.wardanger.excalibur.shared.persistence.JdbcTemporalSupport.localDate;
+import static com.wardanger.excalibur.shared.persistence.JdbcTemporalSupport.timestamp;
+
 @Repository
 @RequiredArgsConstructor
 public class JdbcGuestPassRepository implements GuestPassRepository {
@@ -35,15 +40,15 @@ public class JdbcGuestPassRepository implements GuestPassRepository {
                 guestPass.guestId().toString(),
                 guestPass.productDefinitionId().toString(),
                 guestPass.productName(),
-                guestPass.purchasedAt().toString(),
-                guestPass.validFrom().toString(),
-                guestPass.validUntil().toString(),
+                timestamp(guestPass.purchasedAt()),
+                date(guestPass.validFrom()),
+                date(guestPass.validUntil()),
                 guestPass.totalEntries(),
                 guestPass.remainingEntries(),
                 guestPass.pricePaid(),
                 guestPass.paymentMethod().name(),
                 guestPass.issuedByEmployeeId().toString(),
-                guestPass.invalidatedAt() == null ? null : guestPass.invalidatedAt().toString());
+                timestamp(guestPass.invalidatedAt()));
     }
 
     @Override
@@ -85,8 +90,8 @@ public class JdbcGuestPassRepository implements GuestPassRepository {
                           AND purchased_at < ?
                         """,
                 Long.class,
-                fromInclusive.toString(),
-                toExclusive.toString());
+                timestamp(fromInclusive),
+                timestamp(toExclusive));
         return result == null ? 0 : result;
     }
 
@@ -104,8 +109,8 @@ public class JdbcGuestPassRepository implements GuestPassRepository {
                 (RowCallbackHandler) resultSet -> values.put(
                         PaymentMethod.valueOf(resultSet.getString("payment_method")),
                         resultSet.getLong("revenue")),
-                fromInclusive.toString(),
-                toExclusive.toString());
+                timestamp(fromInclusive),
+                timestamp(toExclusive));
         return new RevenueTotals(
                 values.getOrDefault(PaymentMethod.CASH, 0L),
                 values.getOrDefault(PaymentMethod.BANK_CARD, 0L),
@@ -115,21 +120,21 @@ public class JdbcGuestPassRepository implements GuestPassRepository {
     private static GuestPass mapGuestPass(ResultSet resultSet, int rowNumber) throws SQLException {
         var totalEntriesValue = resultSet.getObject("total_entries");
         var remainingEntriesValue = resultSet.getObject("remaining_entries");
-        var invalidatedAtValue = resultSet.getString("invalidated_at");
+
         return new GuestPass(
                 UUID.fromString(resultSet.getString("id")),
                 UUID.fromString(resultSet.getString("guest_id")),
                 UUID.fromString(resultSet.getString("product_definition_id")),
                 resultSet.getString("product_name_snapshot"),
-                Instant.parse(resultSet.getString("purchased_at")),
-                LocalDate.parse(resultSet.getString("valid_from")),
-                LocalDate.parse(resultSet.getString("valid_until")),
+                instant(resultSet, "purchased_at"),
+                localDate(resultSet, "valid_from"),
+                localDate(resultSet, "valid_until"),
                 totalEntriesValue == null ? null : resultSet.getInt("total_entries"),
                 remainingEntriesValue == null ? null : resultSet.getInt("remaining_entries"),
                 resultSet.getLong("price_paid"),
                 PaymentMethod.valueOf(resultSet.getString("payment_method")),
                 UUID.fromString(resultSet.getString("issued_by_employee_id")),
                 resultSet.getString("issued_by_employee_name"),
-                invalidatedAtValue == null ? null : Instant.parse(invalidatedAtValue));
+                instant(resultSet, "invalidated_at"));
     }
 }

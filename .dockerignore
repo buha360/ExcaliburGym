@@ -1,0 +1,12 @@
+**/target
+**/node_modules
+**/.angular
+**/.git
+**/.idea
+**/.vscode
+backend/data
+*.db
+*.db-*
+*.log
+codex-*.patch
+

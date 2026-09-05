@@ -7,6 +7,8 @@ import com.wardanger.excalibur.employee.application.EmployeeLoginEventRepository
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import static com.wardanger.excalibur.shared.persistence.JdbcTemporalSupport.timestamp;
+
 @Repository
 public class JdbcEmployeeLoginEventRepository implements EmployeeLoginEventRepository {
 
@@ -25,6 +27,6 @@ public class JdbcEmployeeLoginEventRepository implements EmployeeLoginEventRepos
                 eventId.toString(),
                 employeeId.toString(),
                 eventType.name(),
-                occurredAt.toString());
+                timestamp(occurredAt));
     }
 }

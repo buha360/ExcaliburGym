@@ -1,0 +1,43 @@
+<section class="admin-page">
+  <header class="page-heading"><div><p>Adminisztráció</p><h1>Pénztári termékek</h1></div></header>
+  @if (error()) { <p class="form-error feedback" role="alert">{{ error() }}</p> }
+  @if (success()) { <p class="form-success feedback" role="status">{{ success() }}</p> }
+
+  <div class="admin-layout">
+    <form class="product-form" [formGroup]="form" (ngSubmit)="save()">
+      <div><span class="eyebrow">{{ editingId() ? 'Szerkesztés' : 'Új termék' }}</span><h2>{{ editingId() ? 'Termék módosítása' : 'Termék felvétele' }}</h2></div>
+      <label class="field"><span>Megnevezés</span><input type="text" formControlName="name" placeholder="Például: Fehérjeszelet"></label>
+      <label class="field"><span>Eladási ár (Ft)</span><input type="number" min="0" max="10000000" step="10" formControlName="defaultPrice"></label>
+      <button class="button button-primary button-large" type="submit" [disabled]="saving()">{{ saving() ? 'Mentés…' : editingId() ? 'Módosítások mentése' : 'Termék hozzáadása' }}</button>
+      @if (editingId()) { <button class="button" type="button" (click)="cancel()">Mégse</button> }
+      <p class="hint">A 0 Ft-os termék nem adható a kosárhoz. Készletet az alkalmazás jelenleg nem kezel.</p>
+    </form>
+
+    <section class="product-panel">
+      <div class="panel-heading"><span class="eyebrow">Árlista</span><h2>Rögzített termékek</h2></div>
+      @if (loading()) { <p class="empty-state">Termékek betöltése…</p> }
+      @else {
+        <div class="product-list">
+          @for (product of products(); track product.id) {
+            <article class="product-row" [class.inactive]="!product.active">
+              <div><h3>{{ product.name }}</h3><span [class.active]="product.active">{{ product.active ? 'Aktív' : 'Inaktív' }}</span></div>
+              <strong>{{ money(product.defaultPrice) }}</strong>
+              @if (product.active) {
+                <div class="actions">
+                  @if (deactivateId() === product.id) {
+                    <small>A korábbi eladások megmaradnak.</small>
+                    <button class="button button-danger" type="button" (click)="deactivate(product)" [disabled]="saving()">Inaktiválás</button>
+                    <button class="button" type="button" (click)="deactivateId.set(null)">Mégse</button>
+                  } @else {
+                    <button class="button" type="button" (click)="edit(product)">Szerkesztés</button>
+                    <button class="button button-danger" type="button" (click)="deactivateId.set(product.id)">Inaktiválás</button>
+                  }
+                </div>
+              }
+            </article>
+          } @empty { <p class="empty-state">Még nincs pénztári termék.</p> }
+        </div>
+      }
+    </section>
+  </div>
+</section>

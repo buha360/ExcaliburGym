@@ -3,7 +3,9 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ProductsService } from '../../api/generated/api/products.service';
+import { SolariumService } from '../../api/generated/api/solarium.service';
 import { ProductDefinition } from '../../api/generated/model/product-definition';
+import { SolariumProduct } from '../../api/generated/model/solarium-product';
 import { UpsertGymPassProductRequest } from '../../api/generated/model/upsert-gym-pass-product-request';
 
 @Component({
@@ -14,9 +16,11 @@ import { UpsertGymPassProductRequest } from '../../api/generated/model/upsert-gy
 })
 export class ProductAdminPage implements OnInit {
   private readonly productsApi = inject(ProductsService);
+  private readonly solariumApi = inject(SolariumService);
   private readonly formBuilder = inject(FormBuilder);
 
   protected readonly products = signal<readonly ProductDefinition[]>([]);
+  protected readonly solariumProducts = signal<readonly SolariumProduct[]>([]);
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -33,6 +37,7 @@ export class ProductAdminPage implements OnInit {
 
   ngOnInit(): void {
     void this.loadProducts();
+    void this.loadSolariumProducts();
   }
 
   protected edit(product: ProductDefinition): void {
@@ -105,7 +110,31 @@ export class ProductAdminPage implements OnInit {
   }
 
   protected money(amount: number): string {
-    return `${new Intl.NumberFormat('hu-HU').format(amount)} Ft`;
+    return new Intl.NumberFormat('hu-HU').format(amount) + ' Ft';
+  }
+
+  protected async saveSolariumPrice(product: SolariumProduct, input: HTMLInputElement): Promise<void> {
+    const defaultPrice = Number(input.value);
+    if (!Number.isInteger(defaultPrice) || defaultPrice < 0 || defaultPrice > 10_000_000) {
+      this.error.set('A szolárium ára 0 és 10 000 000 Ft közötti egész összeg lehet.');
+      return;
+    }
+    this.saving.set(true);
+    this.error.set(null);
+    this.success.set(null);
+    try {
+      await firstValueFrom(this.solariumApi.updateSolariumProduct(product.id, {
+        name: product.name,
+        defaultPrice,
+        active: product.active,
+      }));
+      this.success.set(product.name + ' ára elmentve.');
+      await this.loadSolariumProducts();
+    } catch (error: unknown) {
+      this.error.set(this.errorMessage(error));
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   private async loadProducts(showLoader = true): Promise<void> {
@@ -116,6 +145,14 @@ export class ProductAdminPage implements OnInit {
       this.error.set(this.errorMessage(error));
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async loadSolariumProducts(): Promise<void> {
+    try {
+      this.solariumProducts.set(await firstValueFrom(this.solariumApi.listSolariumProducts()));
+    } catch (error: unknown) {
+      this.error.set(this.errorMessage(error));
     }
   }
 

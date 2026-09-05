@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/changes/001-create-reporting-projection.yaml
+  - include:
+      file: db/changelog/changes/002-add-sauna-statistics.yaml
+  - include:
+      file: db/changelog/changes/003-expand-projection-event-id.yaml

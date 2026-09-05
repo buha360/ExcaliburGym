@@ -10,6 +10,7 @@ import java.time.ZoneId;
 
 import com.wardanger.excalibur.guest.application.GuestRepository;
 import com.wardanger.excalibur.pass.application.GuestPassRepository;
+import com.wardanger.excalibur.retail.application.RetailRepository;
 import com.wardanger.excalibur.visit.application.GuestCheckInRepository;
 import org.junit.jupiter.api.Test;
 
@@ -17,11 +18,12 @@ class StatisticsServiceTest {
 
     private final GuestRepository guests = mock(GuestRepository.class);
     private final GuestPassRepository passes = mock(GuestPassRepository.class);
+    private final RetailRepository retail = mock(RetailRepository.class);
     private final GuestCheckInRepository checkIns = mock(GuestCheckInRepository.class);
     private final Clock clock = Clock.fixed(
             Instant.parse("2026-08-20T10:15:30Z"),
             ZoneId.of("Europe/Budapest"));
-    private final StatisticsService service = new StatisticsService(guests, passes, checkIns, clock);
+    private final StatisticsService service = new StatisticsService(guests, passes, retail, checkIns, clock);
 
     @Test
     void weeklyStatisticsUseBudapestMondayBoundaryAndSplitRevenueByPaymentMethod() {
@@ -33,7 +35,13 @@ class StatisticsServiceTest {
         when(passes.sumRevenue(from, to)).thenReturn(new GuestPassRepository.RevenueTotals(
                 31_000,
                 44_500,
-                0));
+                0));        when(retail.sumRevenue(from, to)).thenReturn(new RetailRepository.RevenueTotals(
+                2_000,
+                3_500,
+                1_000));
+        when(retail.sumDeposits(from, to)).thenReturn(new RetailRepository.DepositTotals(
+                5_000,
+                6_000));
 
         var result = service.current(StatisticsService.Period.WEEK);
 
@@ -42,8 +50,9 @@ class StatisticsServiceTest {
         assertThat(result.newGuests()).isEqualTo(4);
         assertThat(result.soldPasses()).isEqualTo(7);
         assertThat(result.visits()).isEqualTo(13);
-        assertThat(result.cashRevenue()).isEqualTo(31_000);
-        assertThat(result.bankCardRevenue()).isEqualTo(44_500);
-        assertThat(result.totalRevenue()).isEqualTo(75_500);
+        assertThat(result.cashRevenue()).isEqualTo(38_000);
+        assertThat(result.bankCardRevenue()).isEqualTo(54_000);
+        assertThat(result.prepaidBalanceRevenue()).isEqualTo(1_000);
+        assertThat(result.totalRevenue()).isEqualTo(92_000);
     }
 }

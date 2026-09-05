@@ -13,6 +13,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import static com.wardanger.excalibur.shared.persistence.JdbcTemporalSupport.instant;
+import static com.wardanger.excalibur.shared.persistence.JdbcTemporalSupport.timestamp;
+
 @Repository
 @RequiredArgsConstructor
 public class JdbcGuestCheckInRepository implements GuestCheckInRepository {
@@ -27,7 +30,7 @@ public class JdbcGuestCheckInRepository implements GuestCheckInRepository {
                 VALUES (?, ?, ?, ?, ?, ?)
                 """,
                 checkIn.id().toString(), checkIn.guestId().toString(), checkIn.guestPassId().toString(),
-                checkIn.checkedInAt().toString(), checkIn.checkedInByEmployeeId().toString(), checkIn.consumedEntry());
+                timestamp(checkIn.checkedInAt()), checkIn.checkedInByEmployeeId().toString(), checkIn.consumedEntry());
     }
 
     @Override
@@ -71,7 +74,7 @@ public class JdbcGuestCheckInRepository implements GuestCheckInRepository {
                 SET reversed_at = ?, reversed_by_employee_id = ?, reversal_reason = ?
                 WHERE id = ? AND reversed_at IS NULL
                 """,
-                reversedAt.toString(), employeeId.toString(), reason, checkInId.toString()) > 0;
+                timestamp(reversedAt), employeeId.toString(), reason, checkInId.toString()) > 0;
     }
 
     @Override
@@ -82,7 +85,7 @@ public class JdbcGuestCheckInRepository implements GuestCheckInRepository {
                         """,
                 Long.class,
                 guestId.toString(),
-                fromInclusive.toString());
+                timestamp(fromInclusive));
         return count != null && count > 0;
     }
 
@@ -93,24 +96,24 @@ public class JdbcGuestCheckInRepository implements GuestCheckInRepository {
                         WHERE reversed_at IS NULL AND checked_in_at >= ? AND checked_in_at < ?
                         """,
                 Long.class,
-                fromInclusive.toString(),
-                toExclusive.toString());
+                timestamp(fromInclusive),
+                timestamp(toExclusive));
         return count == null ? 0 : count;
     }
 
     private static GuestCheckIn mapCheckIn(ResultSet resultSet, int rowNumber) throws SQLException {
-        var reversedAtValue = resultSet.getString("reversed_at");
+
         var reversedByIdValue = resultSet.getString("reversed_by_employee_id");
         return new GuestCheckIn(
                 UUID.fromString(resultSet.getString("id")),
                 UUID.fromString(resultSet.getString("guest_id")),
                 UUID.fromString(resultSet.getString("guest_pass_id")),
                 resultSet.getString("pass_name"),
-                Instant.parse(resultSet.getString("checked_in_at")),
+                instant(resultSet, "checked_in_at"),
                 UUID.fromString(resultSet.getString("checked_in_by_employee_id")),
                 resultSet.getString("checked_in_by_employee_name"),
                 resultSet.getBoolean("consumed_entry"),
-                reversedAtValue == null ? null : Instant.parse(reversedAtValue),
+                instant(resultSet, "reversed_at"),
                 reversedByIdValue == null ? null : UUID.fromString(reversedByIdValue),
                 resultSet.getString("reversed_by_employee_name"),
                 resultSet.getString("reversal_reason"));

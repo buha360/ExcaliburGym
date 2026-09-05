@@ -1,0 +1,107 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-solarium-ledger
+      author: codex
+      changes:
+        - createTable:
+            tableName: solarium_product
+            columns:
+              - column: { name: id, type: UUID, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: code, type: VARCHAR(40), constraints: { nullable: false, unique: true } }
+              - column: { name: name, type: VARCHAR(120), constraints: { nullable: false } }
+              - column: { name: minutes_per_unit, type: INTEGER, constraints: { nullable: false } }
+              - column: { name: default_price, type: BIGINT, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: active, type: BOOLEAN, defaultValueBoolean: true, constraints: { nullable: false } }
+              - column: { name: updated_at, type: TIMESTAMP WITH TIME ZONE, constraints: { nullable: false } }
+        - sql:
+            sql: >
+              ALTER TABLE solarium_product
+              ADD CONSTRAINT chk_solarium_product_minutes CHECK (minutes_per_unit > 0),
+              ADD CONSTRAINT chk_solarium_product_price CHECK (default_price >= 0)
+        - createTable:
+            tableName: solarium_account
+            columns:
+              - column: { name: guest_id, type: UUID, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: guest_name, type: VARCHAR(160), constraints: { nullable: false } }
+              - column: { name: remaining_minutes, type: INTEGER, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: updated_at, type: TIMESTAMP WITH TIME ZONE, constraints: { nullable: false } }
+        - sql:
+            sql: ALTER TABLE solarium_account ADD CONSTRAINT chk_solarium_balance_nonnegative CHECK (remaining_minutes >= 0)
+        - createTable:
+            tableName: solarium_transaction
+            columns:
+              - column: { name: id, type: UUID, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: guest_id, type: UUID, constraints: { nullable: false } }
+              - column: { name: type, type: VARCHAR(20), constraints: { nullable: false } }
+              - column: { name: minutes_delta, type: INTEGER, constraints: { nullable: false } }
+              - column: { name: balance_after, type: INTEGER, constraints: { nullable: false } }
+              - column: { name: product_id, type: UUID }
+              - column: { name: product_name, type: VARCHAR(120) }
+              - column: { name: quantity, type: INTEGER }
+              - column: { name: price_paid, type: BIGINT }
+              - column: { name: payment_method, type: VARCHAR(30) }
+              - column: { name: occurred_at, type: TIMESTAMP WITH TIME ZONE, constraints: { nullable: false } }
+              - column: { name: employee_id, type: UUID, constraints: { nullable: false } }
+              - column: { name: employee_name, type: VARCHAR(160), constraints: { nullable: false } }
+        - sql:
+            sql: >
+              ALTER TABLE solarium_transaction
+              ADD CONSTRAINT chk_solarium_transaction_type CHECK (type IN ('PURCHASE', 'USAGE')),
+              ADD CONSTRAINT chk_solarium_transaction_balance CHECK (balance_after >= 0)
+        - createIndex:
+            tableName: solarium_transaction
+            indexName: idx_solarium_transaction_guest_time
+            columns:
+              - column: { name: guest_id }
+              - column: { name: occurred_at, descending: true }
+        - insert:
+            tableName: solarium_product
+            columns:
+              - column: { name: id, value: 64cf9c13-8d98-46f5-9a75-9e7f875fed01 }
+              - column: { name: code, value: PER_MINUTE }
+              - column: { name: name, value: 1 perc }
+              - column: { name: minutes_per_unit, valueNumeric: 1 }
+              - column: { name: default_price, valueNumeric: 0 }
+              - column: { name: active, valueBoolean: true }
+              - column: { name: updated_at, valueDate: 2026-09-05T00:00:00Z }
+        - insert:
+            tableName: solarium_product
+            columns:
+              - column: { name: id, value: 64cf9c13-8d98-46f5-9a75-9e7f875fed60 }
+              - column: { name: code, value: PASS_60 }
+              - column: { name: name, value: 60 perces bérlet }
+              - column: { name: minutes_per_unit, valueNumeric: 60 }
+              - column: { name: default_price, valueNumeric: 0 }
+              - column: { name: active, valueBoolean: true }
+              - column: { name: updated_at, valueDate: 2026-09-05T00:00:00Z }
+        - insert:
+            tableName: solarium_product
+            columns:
+              - column: { name: id, value: 64cf9c13-8d98-46f5-9a75-9e7f875fed90 }
+              - column: { name: code, value: PASS_90 }
+              - column: { name: name, value: 90 perces bérlet }
+              - column: { name: minutes_per_unit, valueNumeric: 90 }
+              - column: { name: default_price, valueNumeric: 0 }
+              - column: { name: active, valueBoolean: true }
+              - column: { name: updated_at, valueDate: 2026-09-05T00:00:00Z }
+  - changeSet:
+      id: 002-create-solarium-outbox
+      author: codex
+      changes:
+        - createTable:
+            tableName: outbox_event
+            columns:
+              - column: { name: id, type: UUID, constraints: { primaryKey: true, nullable: false } }
+              - column: { name: topic, type: VARCHAR(160), constraints: { nullable: false } }
+              - column: { name: aggregate_id, type: UUID, constraints: { nullable: false } }
+              - column: { name: payload, type: TEXT, constraints: { nullable: false } }
+              - column: { name: occurred_at, type: TIMESTAMP WITH TIME ZONE, constraints: { nullable: false } }
+              - column: { name: published_at, type: TIMESTAMP WITH TIME ZONE }
+              - column: { name: attempts, type: INTEGER, defaultValueNumeric: 0, constraints: { nullable: false } }
+              - column: { name: last_error, type: VARCHAR(1000) }
+        - createIndex:
+            tableName: outbox_event
+            indexName: idx_solarium_outbox_pending
+            columns:
+              - column: { name: published_at }
+              - column: { name: occurred_at }

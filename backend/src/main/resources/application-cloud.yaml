@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    url: ${CORE_DATABASE_URL}
+    username: ${CORE_DATABASE_USERNAME}
+    password: ${CORE_DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${CORE_DATABASE_POOL_SIZE:10}
+      connection-init-sql: ""
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+
+excalibur:
+  events:
+    publishing-enabled: true
+    dispatch-delay-ms: 500
+  reporting:
+    mode: remote
+    base-url: ${REPORTING_SERVICE_URL}
+    internal-api-key: ${REPORTING_INTERNAL_API_KEY}
+  sauna:
+    base-url: ${SAUNA_SERVICE_URL}
+    internal-api-key: ${SAUNA_INTERNAL_API_KEY}
+  solarium:
+    base-url: ${SOLARIUM_SERVICE_URL}
+    internal-api-key: ${SOLARIUM_INTERNAL_API_KEY}
+
+server:
+  forward-headers-strategy: framework

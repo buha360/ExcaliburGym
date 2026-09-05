@@ -43,6 +43,7 @@ public class SecurityConfiguration {
                 .securityContext(context -> context.securityContextRepository(securityContextRepository))
                 .csrf(csrf -> csrf.spa())
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/system/status",
                                 "/api/v1/setup/status",

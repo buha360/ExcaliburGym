@@ -1,6 +1,6 @@
 spring:
   application:
-    name: excalibur
+    name: excalibur-core-service
   datasource:
     url: "jdbc:sqlite:${EXCALIBUR_DB_PATH:./data/excalibur-gym.db}"
     driver-class-name: org.sqlite.JDBC
@@ -13,6 +13,18 @@ spring:
     init:
       mode: never
 
+excalibur:
+  events:
+    publishing-enabled: false
+  reporting:
+    mode: local
+  sauna:
+    base-url: ${SAUNA_SERVICE_URL:http://localhost:8082}
+    internal-api-key: ${SAUNA_INTERNAL_API_KEY:local-dev-only}
+  solarium:
+    base-url: ${SOLARIUM_SERVICE_URL:http://localhost:8083}
+    internal-api-key: ${SOLARIUM_INTERNAL_API_KEY:local-dev-only}
+
 server:
   port: 8080
   servlet:
@@ -21,3 +33,13 @@ server:
       cookie:
         http-only: true
         same-site: strict
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info

@@ -10,22 +10,31 @@ import java.time.ZonedDateTime;
 
 import com.wardanger.excalibur.guest.application.GuestRepository;
 import com.wardanger.excalibur.pass.application.GuestPassRepository;
+import com.wardanger.excalibur.retail.application.RetailRepository;
 import com.wardanger.excalibur.visit.application.GuestCheckInRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class StatisticsService {
+@ConditionalOnProperty(name = "excalibur.reporting.mode", havingValue = "local", matchIfMissing = true)
+public class StatisticsService implements StatisticsQuery {
 
     private final GuestRepository guests;
     private final GuestPassRepository passes;
+    private final RetailRepository retail;
     private final GuestCheckInRepository checkIns;
     private final Clock clock;
 
+    @Override
     public StatisticsSnapshot current(Period period) {
         var range = currentRange(period);
-        var revenue = passes.sumRevenue(range.from(), range.to());
+        var passRevenue = passes.sumRevenue(range.from(), range.to());
+        var retailRevenue = retail.sumRevenue(range.from(), range.to());
+        var deposits = retail.sumDeposits(range.from(), range.to());
+        var cashRevenue = passRevenue.cash() + retailRevenue.cash() + deposits.cash();
+        var bankCardRevenue = passRevenue.bankCard() + retailRevenue.bankCard() + deposits.bankCard();
         return new StatisticsSnapshot(
                 period,
                 range.from(),
@@ -33,10 +42,11 @@ public class StatisticsService {
                 checkIns.countActive(range.from(), range.to()),
                 guests.countNewGuests(range.from(), range.to()),
                 passes.countSoldPasses(range.from(), range.to()),
-                revenue.total(),
-                revenue.cash(),
-                revenue.bankCard(),
-                revenue.prepaidBalance());
+                0,
+                cashRevenue + bankCardRevenue,
+                cashRevenue,
+                bankCardRevenue,
+                retailRevenue.prepaidBalance());
     }
 
     private TimeRange currentRange(Period period) {
@@ -72,6 +82,7 @@ public class StatisticsService {
             long visits,
             long newGuests,
             long soldPasses,
+            long saunaReservations,
             long totalRevenue,
             long cashRevenue,
             long bankCardRevenue,

@@ -1,0 +1,67 @@
+openapi: 3.0.3
+info:
+  title: Excalibur Reporting Service API
+  version: 1.0.0
+servers:
+  - url: http://reporting-service:8081
+tags:
+  - name: InternalStatistics
+paths:
+  /internal/v1/statistics/summary:
+    get:
+      tags: [InternalStatistics]
+      operationId: getInternalStatisticsSummary
+      summary: Return event-projected statistics for the current Budapest period
+      parameters:
+        - name: X-Internal-Api-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 16
+        - name: period
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/StatisticsPeriod'
+      responses:
+        '200':
+          description: Statistics projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatisticsSummary'
+        '401':
+          description: Invalid internal API key
+components:
+  schemas:
+    StatisticsPeriod:
+      type: string
+      enum: [DAY, WEEK, MONTH, YEAR]
+    StatisticsSummary:
+      type: object
+      required:
+        - period
+        - from
+        - to
+        - visits
+        - newGuests
+        - soldPasses
+        - saunaReservations
+        - totalRevenue
+        - cashRevenue
+        - bankCardRevenue
+        - prepaidBalanceRevenue
+      properties:
+        period:
+          $ref: '#/components/schemas/StatisticsPeriod'
+        from: { type: string, format: date-time }
+        to: { type: string, format: date-time }
+        visits: { type: integer, format: int64 }
+        newGuests: { type: integer, format: int64 }
+        soldPasses: { type: integer, format: int64 }
+        saunaReservations: { type: integer, format: int64 }
+        totalRevenue: { type: integer, format: int64 }
+        cashRevenue: { type: integer, format: int64 }
+        bankCardRevenue: { type: integer, format: int64 }
+        prepaidBalanceRevenue: { type: integer, format: int64 }

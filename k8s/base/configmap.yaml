@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: excalibur-config
+  namespace: excalibur-gym
+data:
+  SPRING_PROFILES_ACTIVE: cloud
+  CORE_DATABASE_URL: jdbc:postgresql://postgres-core.example.internal:5432/excalibur_core
+  REPORTING_DATABASE_URL: jdbc:postgresql://postgres-reporting.example.internal:5432/excalibur_reporting
+  KAFKA_BOOTSTRAP_SERVERS: kafka.example.internal:9092
+  REPORTING_SERVICE_URL: http://reporting-service:8081
+
+  SAUNA_DATABASE_URL: jdbc:postgresql://postgres-sauna.example.internal:5432/excalibur_sauna
+  SAUNA_SERVICE_URL: http://sauna-service:8082
+  SOLARIUM_DATABASE_URL: jdbc:postgresql://postgres-solarium.example.internal:5432/excalibur_solarium
+  SOLARIUM_SERVICE_URL: http://solarium-service:8083

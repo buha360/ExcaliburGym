@@ -20,6 +20,7 @@ import com.wardanger.excalibur.audit.application.AuditLogService;
 import com.wardanger.excalibur.employee.domain.EmployeeRole;
 import com.wardanger.excalibur.guest.domain.Guest;
 import com.wardanger.excalibur.guest.domain.GuestRegistrationType;
+import com.wardanger.excalibur.integration.outbox.IntegrationEventPublisher;
 import com.wardanger.excalibur.pass.application.GuestPassRepository;
 import com.wardanger.excalibur.pass.domain.GuestPass;
 import com.wardanger.excalibur.pass.domain.PaymentMethod;
@@ -44,7 +45,9 @@ class GuestServiceTest {
     private final GuestPassRepository passes = mock(GuestPassRepository.class);
     private final GuestCheckInRepository checkIns = mock(GuestCheckInRepository.class);
     private final AuditLogService auditLog = mock(AuditLogService.class);
-    private final GuestService service = new GuestService(guests, products, passes, checkIns, auditLog, CLOCK);
+    private final IntegrationEventPublisher integrationEvents = mock(IntegrationEventPublisher.class);
+    private final GuestService service = new GuestService(
+            guests, products, passes, checkIns, auditLog, integrationEvents, CLOCK);
     private final UUID employeeId = UUID.randomUUID();
     private final GymUserPrincipal employee = new GymUserPrincipal(
             employeeId,
@@ -103,27 +106,18 @@ class GuestServiceTest {
     }
 
     @Test
-    void rejectsPrepaidPaymentUntilBalanceLedgerExists() {
-        var productId = UUID.randomUUID();
-        when(products.findActiveById(productId)).thenReturn(Optional.of(new ProductDefinition(
-                productId,
-                "DAY_PASS",
-                "Napijegy",
-                1,
-                1,
-                3_000,
-                true)));
-
+    void rejectsPrepaidBalanceWhenSellingPass() {
         assertThatThrownBy(() -> service.sellPass(
                 guestId(),
-                productId,
+                UUID.randomUUID(),
                 LocalDate.of(2026, 8, 20),
                 PaymentMethod.PREPAID_BALANCE,
                 employee))
-                .isInstanceOf(ApiException.class);
-        verify(passes, org.mockito.Mockito.never()).insert(any(GuestPass.class));
+                .isInstanceOf(ApiException.class)
+                .extracting(exception -> ((ApiException) exception).code())
+                .isEqualTo("UNSUPPORTED_PASS_PAYMENT_METHOD");
+        verify(passes, org.mockito.Mockito.never()).insert(any());
     }
-
     @Test
     void reversesSameDayCheckInAndRestoresConsumedEntry() {
         var checkInId = UUID.randomUUID();
