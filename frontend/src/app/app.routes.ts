@@ -57,7 +57,12 @@ export const routes: Routes = [
         path: 'admin/retail-products',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/retail/retail-product-admin-page').then((module) => module.RetailProductAdminPage),
-      },      {
+      },
+      {
+        path: 'system-health',
+        loadComponent: () => import('./features/system-health/system-health-page').then((module) => module.SystemHealthPage),
+      },
+      {
         path: 'admin/employees',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/employees/employees-page').then((module) => module.EmployeesPage),

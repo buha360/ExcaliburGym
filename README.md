@@ -44,7 +44,8 @@ Modern, local-first konditermi adminisztrációs rendszer Angular és Spring Boo
 - egyenlegről elköltött összeg külön mutatóként;
 - Kafka-eseményekből épített reporting vetület distributed módban;
 - `ADMIN` és `EMPLOYEE` jogosultságok, PIN-alapú bejelentkezés;
-- teljes admin napló és dolgozónként szűrt saját napló.
+- teljes admin napló és dolgozónként szűrt saját napló;
+- dolgozói rendszerállapot oldal automatikus readiness ellenőrzéssel és válaszidőkkel.
 
 ## Architektúra
 

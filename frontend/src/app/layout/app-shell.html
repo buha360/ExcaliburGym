@@ -14,6 +14,7 @@
       @if (profileOpen()) {
         <div class="profile-menu">
           <div class="login-time">Belépve: {{ auth.currentEmployee()?.loggedInAt | date:'yyyy.MM.dd. HH:mm' }}</div>
+          <a routerLink="/system-health" (click)="closeProfile()">Rendszerállapot</a>
           @if (auth.isAdmin()) {
             <a routerLink="/admin/products" (click)="closeProfile()">Bérlettípusok kezelése</a>
             <a routerLink="/admin/retail-products" (click)="closeProfile()">Termékek kezelése</a>
@@ -29,17 +30,17 @@
     <nav aria-label="Fő navigáció">
       <a routerLink="/" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m3 11 9-7 9 7"/><path d="M5.5 10v10h13V10M9.5 20v-6h5v6"/></svg><span>Kezdőlap</span></a>
       <a routerLink="/guests" routerLinkActive="active"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c.4-4 2.2-6 5.5-6s5.1 2 5.5 6M16 5.5c2 .2 3 1.3 3 3.1 0 1.7-1 2.8-3 3M16.5 14c2.5.5 3.7 2.5 4 6"/></svg><span>Vendégek</span></a>
-      <a routerLink="/guests"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h6"/></svg><span>Kondibérletek</span></a>
       <a routerLink="/solarium" routerLinkActive="active"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg><span>Szolárium</span></a>
       <a routerLink="/sauna" routerLinkActive="active"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 18c1.2-1 2.3-1 3.5 0s2.3 1 3.5 0 2.3-1 3.5 0 2.3 1 3.5 0M8 14c-1.6-2 .5-2.7.5-4.5S7.2 7 8.5 5M14 14c-1.6-2 .5-2.7.5-4.5S13.2 7 14.5 5"/></svg><span>Szauna</span></a>
 <a routerLink="/retail" routerLinkActive="active"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16l-1 13H5L4 7Z"/><path d="M8 10V6a4 4 0 0 1 8 0v4M8 14h8"/></svg><span>Pénztár</span></a>
             <a routerLink="/statistics" routerLinkActive="active"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 20V10h4v10M10 20V4h4v16M15 20v-7h4v7M3 20h18"/></svg><span>Statisztika</span></a>
       <a routerLink="/audit" routerLinkActive="active"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 4h10v3H7zM5 6h14v15H5zM8 11h8M8 15h8M8 18h5"/></svg><span>{{ auth.isAdmin() ? 'Admin napló' : 'Saját napló' }}</span></a>
+      <a routerLink="/system-health" routerLinkActive="active"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16v12H4zM8 21h8M12 18v3"/><path d="m7 12 2-2 2.5 4 2-5 1.5 3h2"/></svg><span>Rendszerállapot</span></a>
       @if (auth.isAdmin()) {
         <div class="nav-section">Adminisztráció</div>
         <a routerLink="/admin/products" routerLinkActive="active"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="10" cy="18" r="1.5"/></svg><span>Bérlettípusok</span></a>
 <a routerLink="/admin/retail-products" routerLinkActive="active"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 10h16M8 14h3M8 17h6"/></svg><span>Termékek</span></a>
-                <a routerLink="/admin/employees" routerLinkActive="active"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5.5 20c.5-4.2 2.7-6.3 6.5-6.3s6 2.1 6.5 6.3"/></svg><span>Dolgozók</span></a>
+        <a routerLink="/admin/employees" routerLinkActive="active"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5.5 20c.5-4.2 2.7-6.3 6.5-6.3s6 2.1 6.5 6.3"/></svg><span>Dolgozók</span></a>
       }
     </nav>
   </aside>

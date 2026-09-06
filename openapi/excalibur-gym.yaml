@@ -37,6 +37,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SystemStatus"
+  /api/v1/system-health:
+    get:
+      tags:
+        - System
+      operationId: getPlatformHealth
+      summary: Return service health information for authenticated employees
+      responses:
+        "200":
+          description: Current health of the Excalibur service platform
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformHealth"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
   /api/v1/setup/status:
     get:
       tags:
@@ -819,6 +836,41 @@ components:
         timestamp:
           type: string
           format: date-time
+    PlatformHealth:
+      type: object
+      required: [status, checkedAt, services]
+      properties:
+        status:
+          type: string
+          enum: [UP, DEGRADED]
+        checkedAt:
+          type: string
+          format: date-time
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceHealth"
+    ServiceHealth:
+      type: object
+      required: [id, name, status, checkedAt, message]
+      properties:
+        id:
+          type: string
+          enum: [CORE, REPORTING, SAUNA, SOLARIUM]
+        name:
+          type: string
+        status:
+          type: string
+          enum: [UP, DOWN, NOT_REQUIRED]
+        checkedAt:
+          type: string
+          format: date-time
+        responseTimeMs:
+          type: integer
+          format: int64
+          minimum: 0
+        message:
+          type: string
     SetupStatus:
       type: object
       required:

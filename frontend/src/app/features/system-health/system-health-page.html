@@ -1,0 +1,67 @@
+<section class="health-page">
+  <header class="page-heading">
+    <div>
+      <p>Üzemeltetés</p>
+      <h1>Rendszerállapot</h1>
+      <span>A háttérszolgáltatások elérhetősége egyetlen áttekintésben.</span>
+    </div>
+    <button class="button" type="button" (click)="load()" [disabled]="loading()">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 6v5h-5M4 18v-5h5"/><path d="M18.5 9A7 7 0 0 0 6 6.5L4 9M5.5 15A7 7 0 0 0 18 17.5l2-2.5"/></svg>
+      {{ loading() ? 'Ellenőrzés…' : 'Frissítés' }}
+    </button>
+  </header>
+
+  @if (error()) {
+    <p class="form-error page-message" role="alert">{{ error() }}</p>
+  }
+
+  @if (health(); as currentHealth) {
+    <section class="platform-summary" [class.degraded]="currentHealth.status === 'DEGRADED'" aria-live="polite">
+      <span class="summary-mark" aria-hidden="true"></span>
+      <div>
+        <strong>{{ currentHealth.status === 'UP' ? 'A rendszer üzemi állapotban van' : 'Egy vagy több szolgáltatás figyelmet igényel' }}</strong>
+        <span>
+          Utolsó ellenőrzés: {{ currentHealth.checkedAt | date:'yyyy.MM.dd. HH:mm:ss' }}
+          · Automatikus frissítés 30 másodpercenként
+        </span>
+      </div>
+    </section>
+
+    <div class="service-grid">
+      @for (service of currentHealth.services; track service.id) {
+        <article class="service-card" [class.down]="service.status === 'DOWN'" [class.local]="service.status === 'NOT_REQUIRED'">
+          <div class="service-heading">
+            <div>
+              <span class="service-id">{{ service.id }}</span>
+              <h2>{{ service.name }}</h2>
+            </div>
+            <span class="status-badge">
+              <i aria-hidden="true"></i>
+              {{ statusLabel(service.status) }}
+            </span>
+          </div>
+          <p class="service-purpose">{{ serviceDescription(service) }}</p>
+          <div class="service-meta">
+            <span>{{ service.message }}</span>
+            @if (service.responseTimeMs !== undefined) {
+              <strong>{{ service.responseTimeMs }} ms</strong>
+            }
+          </div>
+        </article>
+      }
+    </div>
+
+    <aside class="orchestration-note">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 4.8 3.2 7.7 8 9 4.8-1.3 8-4.2 8-9V7l-8-4Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg>
+      <div>
+        <strong>Automatikus helyreállítás</strong>
+        <span>Konténeres környezetben a leállt példányok újraindítását és a forgalomból kivételét a Kubernetes kezeli.</span>
+      </div>
+    </aside>
+  } @else if (loading()) {
+    <div class="loading-panel" aria-live="polite">
+      <span class="loading-indicator" aria-hidden="true"></span>
+      <p>Szolgáltatások ellenőrzése…</p>
+    </div>
+  }
+</section>

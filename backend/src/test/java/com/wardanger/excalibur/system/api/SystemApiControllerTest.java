@@ -8,6 +8,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
 import com.wardanger.excalibur.generated.model.SystemStatus;
+import com.wardanger.excalibur.system.application.PlatformHealthService;
 import org.junit.jupiter.api.Test;
 
 class SystemApiControllerTest {
@@ -16,7 +17,9 @@ class SystemApiControllerTest {
     void returnsApplicationStatusUsingTheConfiguredClock() {
         var zone = ZoneId.of("Europe/Budapest");
         var instant = Instant.parse("2026-08-20T18:30:00Z");
-        var controller = new SystemApiController(Clock.fixed(instant, zone));
+        var controller = new SystemApiController(
+                Clock.fixed(instant, zone),
+                org.mockito.Mockito.mock(PlatformHealthService.class));
 
         var response = controller.getSystemStatus();
 
